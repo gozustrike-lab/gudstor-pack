@@ -71,30 +71,31 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         >
           {/* Image Area */}
           <div className="relative aspect-square bg-gradient-to-br from-muted via-muted to-muted/50 overflow-hidden">
-            {/* Image */}
-            <div className="absolute inset-0 flex items-center justify-center">
+            {product.imagenes && product.imagenes.length > 0 ? (
               <motion.div
                 animate={isHovered ? { scale: 1.05 } : { scale: 1 }}
                 transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="w-full h-full relative"
+                className="absolute inset-0"
               >
-                {product.imagenes && product.imagenes.length > 0 ? (
-                  <Image
-                    src={product.imagenes[0]}
-                    alt={product.nombre}
-                    fill
-                    className="object-contain p-3 bg-white/50"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/15 to-secondary/15 flex items-center justify-center">
-                      <Package className="w-10 h-10 text-primary/60" />
-                    </div>
-                  </div>
-                )}
+                <Image
+                  src={product.imagenes[0]}
+                  alt={product.nombre}
+                  fill
+                  className="object-contain p-3"
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                />
               </motion.div>
-            </div>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div
+                  animate={isHovered ? { scale: 1.05, rotate: 2 } : { scale: 1, rotate: 0 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                  className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/15 to-secondary/15 flex items-center justify-center"
+                >
+                  <Package className="w-10 h-10 text-primary/60" />
+                </motion.div>
+              </div>
+            )}
 
             {/* Hover overlay with flip hint */}
             <motion.div
