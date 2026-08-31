@@ -1,4 +1,3 @@
-'use server';
 
 import { draftMode } from 'next/headers';
 import { client, draftClient, type HeroSlide, type Stat, type Service, type ServiceCategory, type Project, type TeamMember, type Testimonial, type Partner, type SiteSettings } from './sanity.client';
