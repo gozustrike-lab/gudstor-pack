@@ -109,9 +109,30 @@ export async function fetchSiteSettings(): Promise<SiteSettings | null> {
 import type { Product } from './types';
 import { allProductsQuery, allProductsPreviewQuery } from './sanity.queries';
 
+/** Convert a Sanity image asset _ref to a CDN URL.
+ *  ref format: "image-{sha1}-{width}x{height}-{format}"
+ *  result: "https://cdn.sanity.io/images/{projectId}/{dataset}/{sha1}-{width}x{height}.{format}"
+ */
+function refToCdnUrl(ref: string): string {
+  const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production';
+  const pid = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '981jghg0';
+  // Remove "image-" prefix, replace last "-{ext}" with ".{ext}"
+  const withoutPrefix = ref.replace(/^image-/, '');
+  const lastDash = withoutPrefix.lastIndexOf('-');
+  const ext = withoutPrefix.substring(lastDash + 1);
+  const base = withoutPrefix.substring(0, lastDash);
+  return `https://cdn.sanity.io/images/${pid}/${dataset}/${base}.${ext}`;
+}
+
 export async function fetchProducts(): Promise<Product[] | null> {
   const preview = isPreview();
   const res = await safeFetch<Product[]>(preview ? allProductsPreviewQuery : allProductsQuery, preview);
-  console.log("FETCHED PRODUCTS COUNT:", res ? res.length : 'NULL');
-  return res;
+  if (!res) return null;
+  // Convert imagenes from asset _refs to CDN URLs
+  return res.map((product) => ({
+    ...product,
+    imagenes: (product.imagenes || [])
+      .filter((ref: string) => typeof ref === 'string' && ref.startsWith('image-'))
+      .map((ref: string) => refToCdnUrl(ref)),
+  }));
 }
