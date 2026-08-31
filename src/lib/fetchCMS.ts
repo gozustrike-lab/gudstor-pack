@@ -1,6 +1,6 @@
 
 import { draftMode } from 'next/headers';
-import { client, draftClient, type HeroSlide, type Stat, type Service, type ServiceCategory, type Project, type TeamMember, type Testimonial, type Partner, type SiteSettings } from './sanity.client';
+import { client, draftClient, projectId, type HeroSlide, type Stat, type Service, type ServiceCategory, type Project, type TeamMember, type Testimonial, type Partner, type SiteSettings } from './sanity.client';
 import {
   allHeroSlidesQuery,
   allStatsQuery,
@@ -26,7 +26,6 @@ import {
   featuredProjectsPreviewQuery,
 } from './sanity.queries';
 
-const { projectId } = await import('./sanity.client');
 
 function getClient() {
   return draftMode().isEnabled ? draftClient : client;
