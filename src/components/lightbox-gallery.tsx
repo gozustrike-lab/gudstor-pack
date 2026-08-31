@@ -18,7 +18,8 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
   const [isZoomed, setIsZoomed] = useState(false);
   const [dragX, setDragX] = useState(0);
 
-  const totalImages = (product.imagenes || []).length;
+  const safeImagenes = (product.imagenes || []).filter((img) => typeof img === 'string' && img.startsWith('https://'));
+  const totalImages = safeImagenes.length;
 
   const goToNext = useCallback(() => {
     setDirection(1);
@@ -193,9 +194,9 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
                     isZoomed ? 'w-full h-full' : 'w-full h-full'
                   }`}
                 >
-                  {product.imagenes && product.imagenes[currentIndex] ? (
+                  {product.imagenes && safeImagenes[currentIndex] ? (
                     <Image
-                      src={product.imagenes[currentIndex]}
+                      src={safeImagenes[currentIndex]}
                       alt={`${product.nombre} - imagen ${currentIndex + 1}`}
                       fill
                       className={`object-contain transition-all duration-300 ${isZoomed ? 'p-0' : 'p-6 sm:p-12'}`}
@@ -214,7 +215,7 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
 
           {/* Thumbnail Strip */}
           <div className="flex gap-2 mt-4 pb-4 px-4">
-            {(product.imagenes || []).map((imgUrl, index) => (
+            {safeImagenes.map((imgUrl, index) => (
               <button
                 key={index}
                 onClick={() => goToIndex(index)}

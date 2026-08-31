@@ -123,7 +123,7 @@ export default function ProductoDetalleClient({
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
 
   const rawProduct = visibleProducts.find((p) => p.id === id || p.slug === id);
-  const product = rawProduct ? { ...rawProduct, imagenes: rawProduct.imagenes || [] } : undefined;
+  const product = rawProduct ? { ...rawProduct, imagenes: (rawProduct.imagenes || []).filter((img) => typeof img === 'string' && img.startsWith('https://')) } : undefined;
 
   // ── Deep linking: read pack + medida from URL on mount ──
   useEffect(() => {

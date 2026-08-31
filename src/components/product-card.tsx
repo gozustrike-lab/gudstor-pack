@@ -20,6 +20,9 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [selectedPackIndex, setSelectedPackIndex] = useState(0);
   const [heartActive, setHeartActive] = useState(false);
 
+  // Only use CDN images (https://cdn.sanity.io). Local paths from JSON fallback are skipped.
+  const cdnImage = product.imagenes?.find(img => typeof img === 'string' && img.startsWith('https://')) ?? null;
+
   const addItem = useCartStore((s) => s.addItem);
   const isFav = useFavoritesStore((s) => s.isFavorite(product.id));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
@@ -71,14 +74,14 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         >
           {/* Image Area */}
           <div className="relative aspect-square bg-gradient-to-br from-muted via-muted to-muted/50 overflow-hidden">
-            {product.imagenes && product.imagenes.length > 0 ? (
+            {cdnImage ? (
               <motion.div
                 animate={isHovered ? { scale: 1.05 } : { scale: 1 }}
                 transition={{ duration: 0.4, ease: 'easeOut' }}
                 className="absolute inset-0"
               >
                 <Image
-                  src={product.imagenes[0]}
+                  src={cdnImage}
                   alt={product.nombre}
                   fill
                   className="object-contain p-3"
