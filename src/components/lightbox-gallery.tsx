@@ -18,7 +18,7 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
   const [isZoomed, setIsZoomed] = useState(false);
   const [dragX, setDragX] = useState(0);
 
-  const totalImages = product.imagenes.length;
+  const totalImages = (product.imagenes || []).length;
 
   const goToNext = useCallback(() => {
     setDirection(1);
@@ -130,7 +130,7 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
         {/* Gallery Container */}
         <div className="relative w-full h-full max-w-5xl mx-4 flex flex-col items-center justify-center">
           {/* Main Image Area */}
-          <div className="relative w-full max-h-[70vh] flex items-center justify-center overflow-hidden">
+          <div className="relative w-full flex-1 min-h-0" style={{ height: '70vh' }}>
             {/* Navigation Arrows */}
             <button
               onClick={goToPrev}
@@ -183,24 +183,30 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
                   x: isZoomed ? 0 : dragX,
                   cursor: isZoomed ? 'zoom-out' : 'grab',
                 }}
-                className={`absolute inset-4 sm:inset-8 flex items-center justify-center ${
+                className={`absolute inset-0 flex items-center justify-center ${
                   isZoomed ? 'cursor-zoom-out' : ''
                 }`}
                 onClick={() => !isZoomed && setIsZoomed(true)}
               >
                 <div
-                  className={`relative bg-gradient-to-br from-white/10 to-white/5 rounded-2xl flex items-center justify-center transition-transform duration-300 ${
-                    isZoomed ? 'w-full h-full' : 'w-[80%] h-[80%] sm:w-[60%] sm:h-[60%]'
+                  className={`relative transition-transform duration-300 ${
+                    isZoomed ? 'w-full h-full' : 'w-full h-full'
                   }`}
                 >
-                  <Package
-                    className={`text-white/30 transition-all duration-300 ${
-                      isZoomed ? 'w-32 h-32 sm:w-48 sm:h-48' : 'w-16 h-16 sm:w-24 sm:h-24'
-                    }`}
-                  />
-                  <div className="absolute bottom-3 left-3 px-2 py-1 text-[10px] text-white/50 bg-white/10 backdrop-blur-sm rounded-md">
-                    {product.imagenes[currentIndex]}
-                  </div>
+                  {product.imagenes && product.imagenes[currentIndex] ? (
+                    <Image
+                      src={product.imagenes[currentIndex]}
+                      alt={`${product.nombre} - imagen ${currentIndex + 1}`}
+                      fill
+                      className={`object-contain transition-all duration-300 ${isZoomed ? 'p-0' : 'p-6 sm:p-12'}`}
+                      sizes="100vw"
+                      priority
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="w-24 h-24 text-white/20" />
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -208,23 +214,24 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
 
           {/* Thumbnail Strip */}
           <div className="flex gap-2 mt-4 pb-4 px-4">
-            {product.imagenes.map((_, index) => (
+            {(product.imagenes || []).map((imgUrl, index) => (
               <button
                 key={index}
                 onClick={() => goToIndex(index)}
-                className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden transition-all duration-200 ${
+                className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden transition-all duration-200 flex-shrink-0 ${
                   index === currentIndex
-                    ? 'ring-2 ring-white bg-white/20 scale-105'
-                    : 'bg-white/5 hover:bg-white/10'
+                    ? 'ring-2 ring-white scale-105'
+                    : 'opacity-60 hover:opacity-90'
                 }`}
                 aria-label={`Ir a imagen ${index + 1}`}
               >
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Package className="w-5 h-5 text-white/40" />
-                </div>
-                <span className="absolute bottom-0.5 right-1 text-[8px] text-white/60 font-mono">
-                  {index + 1}
-                </span>
+                <Image
+                  src={imgUrl}
+                  alt={`${product.nombre} - miniatura ${index + 1}`}
+                  fill
+                  className="object-cover"
+                  sizes="64px"
+                />
               </button>
             ))}
           </div>
