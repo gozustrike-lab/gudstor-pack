@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Package } from 'lucide-react';
 import type { Product } from '@/lib/types';
 

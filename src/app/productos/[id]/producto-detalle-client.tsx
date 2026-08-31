@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, use, useCallback, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -443,9 +444,22 @@ export default function ProductoDetalleClient({
                 {currentImageIndex + 1}/{product.imagenes?.length ?? 0}
               </div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-28 h-28 bg-gradient-to-br from-primary/15 to-secondary/15 rounded-3xl flex items-center justify-center">
-                  <Package className="w-14 h-14 text-primary/50" />
-                </div>
+                {product.imagenes && product.imagenes.length > 0 ? (
+                  <div className="w-full h-full relative">
+                    <Image
+                      src={product.imagenes[currentImageIndex]}
+                      alt={product.nombre}
+                      fill
+                      priority
+                      className="object-contain p-4 xl:p-8"
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-28 h-28 bg-gradient-to-br from-primary/15 to-secondary/15 rounded-3xl flex items-center justify-center">
+                    <Package className="w-14 h-14 text-primary/50" />
+                  </div>
+                )}
               </div>
               <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-3 py-1.5 bg-black/20 backdrop-blur-sm text-white text-xs rounded-lg">
                 <ZoomIn className="w-3.5 h-3.5" />
@@ -455,19 +469,25 @@ export default function ProductoDetalleClient({
             {/* Thumbnail strip — BELOW main image, horizontal row */}
             {(product.imagenes?.length || 0) > 1 && (
               <div className="hidden lg:grid grid-cols-4 gap-2 mt-2">
-                {(product.imagenes || []).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => { setCurrentImageIndex(index); setIsZoomed(false); }}
-                    className={`aspect-square bg-gradient-to-br from-muted to-muted/50 rounded-xl border-2 flex items-center justify-center transition-all hover:opacity-80 ${
-                      currentImageIndex === index
-                        ? 'border-primary bg-primary/5 shadow-sm'
-                        : 'border-border/50'
-                    }`}
-                  >
-                    <Package className={`w-7 h-7 ${currentImageIndex === index ? 'text-primary/50' : 'text-muted-foreground/30'}`} />
-                  </button>
-                ))}
+                {(product.imagenes || []).map((imgUrl, index) => (
+                    <button
+                      key={index}
+                      onClick={() => { setCurrentImageIndex(index); setIsZoomed(false); }}
+                      className={`relative aspect-square bg-gradient-to-br from-muted to-muted/50 rounded-xl border-2 flex items-center justify-center overflow-hidden transition-all hover:opacity-80 ${
+                        currentImageIndex === index
+                          ? 'border-primary shadow-sm'
+                          : 'border-border/50'
+                      }`}
+                    >
+                      <Image
+                        src={imgUrl}
+                        alt={`${product.nombre} - vista ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="100px"
+                      />
+                    </button>
+                  ))}
               </div>
             )}
           </motion.div>
@@ -824,13 +844,26 @@ export default function ProductoDetalleClient({
                   className="absolute inset-0 flex items-center justify-center cursor-zoom-in"
                   onClick={() => setIsLightboxOpen(true)}
                 >
-                  <div className={`flex items-center justify-center transition-all duration-300 ${
-                    isZoomed ? 'w-24 h-24' : 'w-16 h-16'
-                  }`}>
-                    <div className="w-full h-full bg-gradient-to-br from-primary/15 to-secondary/15 rounded-3xl flex items-center justify-center">
-                      <Package className="w-8 h-8 text-primary/50" />
-                    </div>
-                  </div>
+                  {product.imagenes && product.imagenes.length > 0 ? (
+                      <div className="w-full h-full relative">
+                        <Image
+                          src={product.imagenes[currentImageIndex]}
+                          alt={product.nombre}
+                          fill
+                          priority
+                          className="object-contain p-4"
+                          sizes="100vw"
+                        />
+                      </div>
+                    ) : (
+                      <div className={`flex items-center justify-center transition-all duration-300 ${
+                        isZoomed ? 'w-24 h-24' : 'w-16 h-16'
+                      }`}>
+                        <div className="w-full h-full bg-gradient-to-br from-primary/15 to-secondary/15 rounded-3xl flex items-center justify-center">
+                          <Package className="w-8 h-8 text-primary/50" />
+                        </div>
+                      </div>
+                    )}
                 </div>
 
                 {/* Tap to expand */}
@@ -846,17 +879,23 @@ export default function ProductoDetalleClient({
               {/* Image grid — show all images as a visible grid */}
               {(product.imagenes?.length || 0) > 1 && (
                 <div className="grid grid-cols-4 gap-2">
-                  {(product.imagenes || []).map((_, index) => (
+                  {(product.imagenes || []).map((imgUrl, index) => (
                     <button
                       key={index}
                       onClick={() => { setCurrentImageIndex(index); setIsZoomed(false); }}
-                      className={`aspect-square rounded-xl border-2 overflow-hidden transition-all flex items-center justify-center ${
+                      className={`relative aspect-square rounded-xl border-2 flex items-center justify-center overflow-hidden transition-all ${
                         currentImageIndex === index
-                          ? 'border-primary bg-primary/5 shadow-sm'
+                          ? 'border-primary shadow-sm'
                           : 'border-border/50 bg-muted/30'
                       }`}
                     >
-                      <Package className={`w-5 h-5 ${currentImageIndex === index ? 'text-primary/50' : 'text-muted-foreground/30'}`} />
+                      <Image
+                        src={imgUrl}
+                        alt={`${product.nombre} - vista ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="100px"
+                      />
                     </button>
                   ))}
                 </div>

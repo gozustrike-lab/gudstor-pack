@@ -45,7 +45,7 @@ async function safeFetch<T>(query: string, forcePreview = false): Promise<T | nu
   if (!projectId) return null;
   try {
     const c = forcePreview ? draftClient : getClient();
-    const options = forcePreview ? { next: { revalidate: 0 } } : undefined;
+    const options = { next: { revalidate: forcePreview ? 0 : 30 } };
     return await c.fetch<T>(query, {}, options);
   } catch (err) {
     console.error("SAFEFETCH ERROR:", err);

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Package, Star, Eye, Heart } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
@@ -70,14 +71,24 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         >
           {/* Image Area */}
           <div className="relative aspect-square bg-gradient-to-br from-muted via-muted to-muted/50 overflow-hidden">
-            {/* Placeholder Image */}
+            {/* Image */}
             <div className="absolute inset-0 flex items-center justify-center">
               <motion.div
                 animate={isHovered ? { scale: 1.05, rotate: 2 } : { scale: 1, rotate: 0 }}
                 transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/15 to-secondary/15 flex items-center justify-center"
+                className={product.imagenes && product.imagenes.length > 0 ? "w-full h-full relative" : "w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/15 to-secondary/15 flex items-center justify-center"}
               >
-                <Package className="w-10 h-10 text-primary/60" />
+                {product.imagenes && product.imagenes.length > 0 ? (
+                  <Image 
+                    src={product.imagenes[0]} 
+                    alt={product.nombre} 
+                    fill 
+                    className="object-contain p-4" 
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                ) : (
+                  <Package className="w-10 h-10 text-primary/60" />
+                )}
               </motion.div>
             </div>
 
