@@ -1,0 +1,2 @@
+require('dotenv').config(); const { createClient } = require('@sanity/client'); const client = createClient({ projectId: '981jghg0', dataset: 'production', useCdn: false, apiVersion: '2023-01-01' }); client.fetch('*[_type == "product"]').then(res => console.log('Count:', res.length)).catch(console.error);
+ client.fetch('*[_type == "product" && slug.current == "viruta-de-papel-colores"]').then(res => console.log(JSON.stringify(res, null, 2))).catch(console.error);

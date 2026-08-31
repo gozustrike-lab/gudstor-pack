@@ -1,0 +1,799 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useCallback, useRef } from 'react';
+     4→import Link from 'next/link';
+     5→import Image from 'next/image';
+     6→import { motion, AnimatePresence } from 'framer-motion';
+     7→import gsap from 'gsap';
+     8→import { ScrollTrigger } from 'gsap/ScrollTrigger';
+     9→
+    10→gsap.registerPlugin(ScrollTrigger);
+    11→
+    12→import {
+    13→  Package, Truck, Shield, HeadphonesIcon, ArrowRight, Star,
+    14→  ChevronRight, ChevronLeft, Box, Layers, Ruler, CircleDot,
+    15→  ShoppingBag, Sparkles, TrendingUp, Users, Quote, MessageCircle,
+    16→  Clock, MapPin, Zap, Award,
+    17→} from 'lucide-react';
+    18→import ProductCard from '@/components/product-card';
+    19→import products from '@/data/products.json';
+    20→import { useScrollSpy } from '@/lib/use-scroll-spy';
+    21→import { dataSanityAttr } from '@/hooks/use-data-sanity';
+    22→import type { HeroSlide, Stat, Testimonial, SiteSettings, Partner } from '@/lib/sanity.client';
+    23→
+    24→// ─── Props ──────────────────────────────────────────────────────────────────
+    25→
+    26→interface HomePageClientProps {
+    27→  sanitySlides: HeroSlide[] | null;
+    28→  sanityStats: Stat[] | null;
+    29→  sanityTestimonials: Testimonial[] | null;
+    30→  sanitySettings: SiteSettings | null;
+    31→  sanityPartners: Partner[] | null;
+    32→}
+    33→
+    34→// ─── Local Fallback Data ────────────────────────────────────────────────────
+    35→
+    36→const visibleProducts = products;
+    37→
+    38→const categories = [
+    39→  { nombre: 'Cajas', icon: Box, descripcion: 'Cajas Kraft de alta resistencia para todo tipo de envíos', count: 12, color: 'from-amber-500/10 to-amber-600/5', iconColor: 'text-amber-600', image: '/images/categories/cajas.webp' },
+    40→  { nombre: 'Films', icon: Layers, descripcion: 'Film estirable industrial para paletizado profesional', count: 8, color: 'from-teal-500/10 to-teal-600/5', iconColor: 'text-teal-600', image: '/images/categories/films.webp' },
+    41→  { nombre: 'Cintas', icon: Ruler, descripcion: 'Cintas adhesivas de alto rendimiento para sellado seguro', count: 10, color: 'from-blue-500/10 to-blue-600/5', iconColor: 'text-blue-600', image: '/images/categories/cintas.webp' },
+    42→  { nombre: 'Protección', icon: CircleDot, descripcion: 'Plástico burbuja y espumas para protección de fragilidades', count: 8, color: 'from-purple-500/10 to-purple-600/5', iconColor: 'text-purple-600', image: '/images/categories/proteccion.webp' },
+    43→  { nombre: 'Bolsas', icon: ShoppingBag, descripcion: 'Bolsas de envío courier waterproof y seguras', count: 12, color: 'from-green-500/10 to-green-600/5', iconColor: 'text-green-600', image: '/images/categories/bolsas.webp' },
+    44→];
+    45→
+    46→const localHeroSlides = [
+    47→  { badge: '#1 en Materiales de Embalaje en Perú', title: 'Soluciones de', titleHighlight: 'Embalaje Profesional', description: 'Protege tus productos con materiales de la más alta calidad. Cajas Kraft, film estirable, cintas adhesivas y más.', ctaText: 'Ver Catálogo', ctaLink: '/productos', secondaryText: 'Cajas Kraft', secondaryLink: '/productos?categoria=Cajas', floaters: [{ label: 'Cajas Kraft', icon: Box, position: 'top-4 right-8', delay: 0 }, { label: 'Film Estirable', icon: Layers, position: 'bottom-12 left-4', delay: 0.5 }, { label: 'Cintas', icon: Ruler, position: 'bottom-4 right-16', delay: 1 }] },
+    48→  { badge: 'Descuentos por Volumen', title: 'Cajas de Cartón', titleHighlight: 'Corrugado Premium', description: 'Más de 50 productos con descuentos de hasta 20% por volumen. Autoarmables, kraft, doble pared y más.', ctaText: 'Ver Cajas', ctaLink: '/productos?categoria=Cajas', secondaryText: 'Ver Films', secondaryLink: '/productos?categoria=Films', floaters: [{ label: 'Autoarmables', icon: Box, position: 'top-8 right-4', delay: 0 }, { label: 'Doble Pared', icon: Shield, position: 'bottom-8 left-8', delay: 0.6 }, { label: 'Kraft', icon: Package, position: 'bottom-4 right-8', delay: 1.2 }] },
+    49→  { badge: 'Envíos a Todo el Perú', title: 'Films y Plásticos', titleHighlight: 'Industriales', description: 'Film estirable, termoencogible, antiestático y alimentario. Protección profesional para tu mercancía.', ctaText: 'Ver Films', ctaLink: '/productos?categoria=Films', secondaryText: 'Contactar', secondaryLink: 'https://wa.me/51977346837?text=Hola%2C%20quiero%20cotizar', floaters: [{ label: 'Estirable', icon: Layers, position: 'top-4 right-12', delay: 0 }, { label: 'Alimentario', icon: Shield, position: 'bottom-16 left-4', delay: 0.7 }, { label: 'Termoencogible', icon: Zap, position: 'bottom-4 right-20', delay: 1.3 }] },
+    50→];
+    51→
+    52→const localStats = [
+    53→  { value: '2,500+', label: 'Clientes Satisfechos', icon: Users },
+    54→  { value: '50+', label: 'Productos Disponibles', icon: Package },
+    55→  { value: '98%', label: 'Tasa de Entrega', icon: Truck },
+    56→  { value: '4.9', label: 'Calificación Promedio', icon: Star },
+    57→];
+    58→
+    59→const localTestimonials = [
+    60→  { author: 'María Fernanda Rojas', company: 'Fashion Retail S.A.C.', role: 'Gerente de Operaciones', quote: 'GUDSTOR PACK nos ayudó a reducir costos de empaque significativamente. La calidad de las cajas autoarmables es excelente y el envío siempre puntual.', rating: 5 },
+    61→  { author: 'Carlos Alberto Mendoza', company: 'Alimentos del Norte', role: 'Director Logístico', quote: 'El film grado alimenticio cumple perfectamente con las normativas. El equipo de GUDSTOR PACK nos asesoró para elegir los productos correctos.', rating: 5 },
+    62→  { author: 'Ana Lucía Torres', company: 'Tienda Online "El Rincón Creativo"', role: 'Propietaria', quote: 'Los precios por mayor son inmejorables. Compro packs de 100 cajas y el ahorro es real. Muy recomendados para negocios de ecommerce.', rating: 5 },
+    63→  { author: 'Roberto Sánchez Huamán', company: 'LogiPeru S.A.', role: 'Jefe de Almacén', quote: 'El film estirable industrial de alta tensión optimizó nuestro paletizado. Redujimos tiempos de embalaje en un 40%.', rating: 5 },
+    64→];
+    65→
+    66→const localShippingInfo = [
+    67→  { icon: Clock, title: 'Despacho Rápido', description: 'Pedidos antes de las 2pm se despachan el mismo día en Lima.' },
+    68→  { icon: MapPin, title: 'Cobertura Nacional', description: 'Envíos a todas las regiones del Perú con seguimiento por WhatsApp.' },
+    69→  { icon: Shield, title: 'Empaque Seguro', description: 'Todos nuestros productos viajan con empaque protector especial.' },
+    70→];
+    71→
+    72→const localTrustIndicators = [
+    73→  { icon: Truck, title: 'Envío a Todo el Perú', description: 'Despacho en 24h para Lima Metropolitana y 48-72h a provincias. Seguimiento en tiempo real por WhatsApp.' },
+    74→  { icon: Shield, title: 'Calidad Garantizada', description: 'Productos certificados con garantía de resistencia. Materiales de primera calidad para protección profesional.' },
+    75→  { icon: MessageCircle, title: 'Asesoría por WhatsApp', description: 'Atención personalizada inmediata por WhatsApp. Cotización y recomendación de productos para tu negocio.' },
+    76→  { icon: TrendingUp, title: 'Precios por Mayor', description: 'Descuentos escalonados desde 25 unidades hasta 1000+. Ahorra hasta 20% comprando en volumen.' },
+    77→];
+    78→
+    79→const localCTA = {
+    80→  badge: 'Asesoría personalizada gratis',
+    81→  title: '¿Listo para optimizar tu embalaje?',
+    82→  subtitle: 'Contáctanos por WhatsApp y recibe asesoría personalizada para tu negocio. Envío rápido a todo el Perú.',
+    83→  ctaText: 'Ver Catálogo',
+    84→  ctaLink: '/productos',
+    85→  secondaryCtaText: 'WhatsApp',
+    86→  secondaryCtaLink: 'https://wa.me/51977346837?text=Hola%2C%20quiero%20cotizar%20materiales%20de%20embalaje',
+    87→};
+    88→
+    89→const localPartners = ['Cliente Corporativo 1', 'Cliente Corporativo 2', 'Cliente Corporativo 3', 'Cliente Corporativo 4', 'Cliente Corporativo 5', 'Cliente Corporativo 6'];
+    90→
+    91→// ─── Icon Map ───────────────────────────────────────────────────────────────
+    92→
+    93→const iconMap: Record<string, any> = { Users, Package, Truck, Star, Box, Layers, Ruler, CircleDot, ShoppingBag, Shield, TrendingUp, HeadphonesIcon, MessageCircle, Clock, MapPin, Zap, Award, Sparkles };
+    94→function getIcon(name?: string) { return (name && iconMap[name]) || Package; }
+    95→
+    96→// ─── Hero Carousel ──────────────────────────────────────────────────────────
+    97→
+    98→interface SlideData {
+    99→  badge: string;
+   100→  title: string;
+   101→  titleHighlight: string;
+   102→  description: string;
+   103→  ctaText: string;
+   104→  ctaLink: string;
+   105→  secondaryText: string;
+   106→  secondaryLink: string;
+   107→  floaters: { label: string; icon: any; position: string; delay: number }[];
+   108→  _sanityId?: string | null;
+   109→}
+   110→
+   111→function HeroCarousel({ slides }: { slides: SlideData[] }) {
+   112→  const [current, setCurrent] = useState(0);
+   113→  const timerRef = useRef<NodeJS.Timeout | null>(null);
+   114→
+   115→  const startTimer = useCallback(() => {
+   116→    if (timerRef.current) clearInterval(timerRef.current);
+   117→    timerRef.current = setInterval(() => setCurrent((p) => (p + 1) % slides.length), 6000);
+   118→  }, [slides.length]);
+   119→
+   120→  useEffect(() => { startTimer(); return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, [startTimer]);
+   121→  const goTo = (i: number) => { setCurrent(i); startTimer(); };
+   122→  const prev = () => goTo((current - 1 + slides.length) % slides.length);
+   123→  const next = () => goTo((current + 1) % slides.length);
+   124→  const slide = slides[current];
+   125→
+   126→  return (
+   127→    <section id="inicio" className="relative min-h-[100svh] flex items-center overflow-hidden" {...(slide._sanityId ? dataSanityAttr(slide._sanityId, 'heroSlide', '_root') : {})}>
+   128→      {/* ── FULL-BLEED background image — ALL viewports ── */}
+   129→      <Image
+   130→        src="/images/hero-product.webp"
+   131→        alt=""
+   132→        fill
+   133→        className="object-cover object-center"
+   134→        priority
+   135→        sizes="100vw"
+   136→      />
+   137→      {/* Dark overlay for text contrast — stronger at bottom */}
+   138→      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
+   139→      {/* Subtle warm tint matching brand */}
+   140→      <div className="absolute inset-0 bg-primary/10 mix-blend-overlay" />
+   141→
+   142→      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-16 sm:pb-20">
+   143→        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+   144→          <AnimatePresence mode="wait">
+   145→            <motion.div key={current} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.5, ease: 'easeOut' }} className="space-y-5 sm:space-y-6">
+   146→              {/* Badge — glass pill */}
+   147→              <motion.div
+   148→                initial={{ opacity: 0, y: 10 }}
+   149→                animate={{ opacity: 1, y: 0 }}
+   150→                transition={{ delay: 0.2 }}
+   151→                className="inline-flex items-center gap-2 px-4 py-2 bg-white/15 backdrop-blur-md border border-white/20 rounded-full"
+   152→              >
+   153→                <Sparkles className="w-4 h-4 text-amber-300" />
+   154→                <span className="text-sm font-medium text-white/95">{slide.badge}</span>
+   155→              </motion.div>
+   156→
+   157→              {/* Headline — large, white, crisp */}
+   158→              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-7xl font-extrabold text-white leading-[1.08] tracking-tight">
+   159→                {slide.title}{' '}
+   160→                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-white/90">{slide.titleHighlight}</span>
+   161→              </h1>
+   162→
+   163→              {/* Description — concise, readable */}
+   164→              <p className="text-base sm:text-lg text-white/80 leading-relaxed max-w-lg">
+   165→                {slide.description}
+   166→              </p>
+   167→
+   168→              {/* CTAs — primary + ghost */}
+   169→              <div className="flex flex-col sm:flex-row gap-3 pt-1">
+   170→                <Link href={slide.ctaLink}>
+   171→                  <motion.button
+   172→                    whileHover={{ scale: 1.03 }}
+   173→                    whileTap={{ scale: 0.98 }}
+   174→                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 sm:px-8 sm:py-4 bg-white text-foreground font-bold rounded-xl shadow-xl shadow-black/20 hover:shadow-black/30 transition-all text-sm sm:text-base"
+   175→                  >
+   176→                    {slide.ctaText}
+   177→                    <ArrowRight className="w-5 h-5" />
+   178→                  </motion.button>
+   179→                </Link>
+   180→                <Link href={slide.secondaryLink}>
+   181→                  <motion.button
+   182→                    whileHover={{ scale: 1.03 }}
+   183→                    whileTap={{ scale: 0.98 }}
+   184→                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 sm:px-8 sm:py-4 bg-white/10 backdrop-blur-sm border border-white/25 text-white font-semibold rounded-xl hover:bg-white/20 transition-all text-sm sm:text-base"
+   185→                  >
+   186→                    {slide.secondaryText}
+   187→                    <ChevronRight className="w-4 h-4" />
+   188→                  </motion.button>
+   189→                </Link>
+   190→              </div>
+   191→
+   192→              {/* Social proof — minimal */}
+   193→              <motion.div
+   194→                initial={{ opacity: 0 }}
+   195→                animate={{ opacity: 1 }}
+   196→                transition={{ delay: 0.6 }}
+   197→                className="flex items-center gap-3 pt-3"
+   198→              >
+   199→                <div className="flex -space-x-2">
+   200→                  {[...Array(4)].map((_, i) => (
+   201→                    <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-white/25 to-white/10 border-2 border-white/40 flex items-center justify-center">
+   202→                      <Users className="w-3.5 h-3.5 text-white/80" />
+   203→                    </div>
+   204→                  ))}
+   205→                </div>
+   206→                <div className="flex items-center gap-2">
+   207→                  <div className="flex gap-0.5">
+   208→                    {[...Array(5)].map((_, i) => (
+   209→                      <Star key={i} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+   210→                    ))}
+   211→                  </div>
+   212→                  <span className="text-xs text-white/60 font-medium">+2,500 clientes</span>
+   213→                </div>
+   214→              </motion.div>
+   215→            </motion.div>
+   216→          </AnimatePresence>
+   217→
+   218→          {/* Desktop — Hero product image, clean floating card */}
+   219→          <div className="relative hidden lg:flex items-center justify-center">
+   220→            <AnimatePresence mode="wait">
+   221→              <motion.div
+   222→                key={current}
+   223→                initial={{ opacity: 0, scale: 0.9, y: 30 }}
+   224→                animate={{ opacity: 1, scale: 1, y: 0 }}
+   225→                exit={{ opacity: 0, scale: 0.95, y: -15 }}
+   226→                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+   227→                className="relative w-full max-w-md xl:max-w-lg"
+   228→              >
+   229→                {/* Glow effect behind image */}
+   230→                <div className="absolute -inset-6 bg-primary/20 rounded-[2rem] blur-3xl" />
+   231→                <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-black/30 border border-white/20">
+   232→                  <Image
+   233→                    src="/images/hero-product.webp"
+   234→                    alt="GUDSTOR PACK - Embalaje Profesional"
+   235→                    width={1254}
+   236→                    height={1254}
+   237→                    priority
+   238→                    className="w-full h-auto object-cover"
+   239→                    sizes="(max-width: 1024px) 0vw, 50vw"
+   240→                  />
+   241→                </div>
+   242→              </motion.div>
+   243→            </AnimatePresence>
+   244→          </div>
+   245→        </div>
+   246→
+   247→        {/* Carousel dots — centered at bottom */}
+   248→        <div className="flex items-center justify-center gap-4 mt-8 sm:mt-12">
+   249→          <button onClick={prev} className="p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 hover:bg-white/20 transition-colors">
+   250→            <ChevronLeft className="w-5 h-5 text-white/80" />
+   251→          </button>
+   252→          <div className="flex items-center gap-2">
+   253→            {slides.map((_, i) => (
+   254→              <button
+   255→                key={i}
+   256→                onClick={() => goTo(i)}
+   257→                className={`h-2 rounded-full transition-all duration-300 ${
+   258→                  i === current
+   259→                    ? 'w-8 bg-white'
+   260→                    : 'w-2 bg-white/30 hover:bg-white/50'
+   261→                }`}
+   262→              />
+   263→            ))}
+   264→          </div>
+   265→          <button onClick={next} className="p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 hover:bg-white/20 transition-colors">
+   266→            <ChevronRight className="w-5 h-5 text-white/80" />
+   267→          </button>
+   268→        </div>
+   269→      </div>
+   270→
+   271→      {/* Bottom fade into page background */}
+   272→      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
+   273→    </section>
+   274→  );
+   275→}
+   276→
+   277→// ─── Product Slider ──────────────────────────────────────────────────────────
+   278→
+   279→function ProductSlider() {
+   280→  const fp = visibleProducts.filter((p) => p.destacado);
+   281→  const dup = [...fp, ...fp];
+   282→  const scrollRef = useRef<HTMLDivElement>(null);
+   283→  const [paused, setPaused] = useState(false);
+   284→  const [canScrollLeft, setCanScrollLeft] = useState(false);
+   285→  const [canScrollRight, setCanScrollRight] = useState(true);
+   286→  const isDragging = useRef(false);
+   287→  const startX = useRef(0);
+   288→  const scrollStart = useRef(0);
+   289→  const pausedRef = useRef(false);
+   290→
+   291→  // Keep ref in sync
+   292→  useEffect(() => { pausedRef.current = paused; }, [paused]);
+   293→
+   294→  // Auto-scroll animation
+   295→  useEffect(() => {
+   296→    const el = scrollRef.current;
+   297→    if (!el || paused) return;
+   298→    let pos = el.scrollLeft;
+   299→    let raf: number;
+   300→    const step = () => {
+   301→      if (pausedRef.current) return;
+   302→      pos += 0.8;
+   303→      if (pos >= el.scrollWidth / 2) pos = 0;
+   304→      el.scrollLeft = pos;
+   305→      raf = requestAnimationFrame(step);
+   306→    };
+   307→    raf = requestAnimationFrame(step);
+   308→    return () => cancelAnimationFrame(raf);
+   309→  }, [paused]);
+   310→
+   311→  // Pause on interaction, resume after 4s
+   312→  const pauseImmediately = useCallback(() => {
+   313→    pausedRef.current = true;
+   314→    setPaused(true);
+   315→  }, []);
+   316→
+   317→  useEffect(() => {
+   318→    if (!paused) return;
+   319→    const timer = setTimeout(() => { pausedRef.current = false; setPaused(false); }, 4000);
+   320→    return () => clearTimeout(timer);
+   321→  }, [paused]);
+   322→
+   323→  // Update scroll button visibility
+   324→  const updateScrollButtons = useCallback(() => {
+   325→    const el = scrollRef.current;
+   326→    if (!el) return;
+   327→    setCanScrollLeft(el.scrollLeft > 5);
+   328→    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 5);
+   329→  }, []);
+   330→
+   331→  useEffect(() => {
+   332→    const el = scrollRef.current;
+   333→    if (!el) return;
+   334→    updateScrollButtons();
+   335→    el.addEventListener('scroll', updateScrollButtons, { passive: true });
+   336→    return () => el.removeEventListener('scroll', updateScrollButtons);
+   337→  }, [updateScrollButtons]);
+   338→
+   339→  // Drag to scroll (mouse)
+   340→  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+   341→    isDragging.current = true;
+   342→    startX.current = e.pageX - scrollRef.current!.offsetLeft;
+   343→    scrollStart.current = scrollRef.current!.scrollLeft;
+   344→    pauseImmediately();
+   345→  }, [pauseImmediately]);
+   346→
+   347→  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+   348→    if (!isDragging.current) return;
+   349→    e.preventDefault();
+   350→    const x = e.pageX - scrollRef.current!.offsetLeft;
+   351→    const walk = (x - startX.current) * 1.5;
+   352→    scrollRef.current!.scrollLeft = scrollStart.current - walk;
+   353→  }, []);
+   354→
+   355→  const handleMouseUp = useCallback(() => {
+   356→    isDragging.current = false;
+   357→  }, []);
+   358→
+   359→  const handleMouseLeave = useCallback(() => {
+   360→    isDragging.current = false;
+   361→  }, []);
+   362→
+   363→  // Drag to scroll (touch)
+   364→  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+   365→    isDragging.current = true;
+   366→    startX.current = e.touches[0].pageX - scrollRef.current!.offsetLeft;
+   367→    scrollStart.current = scrollRef.current!.scrollLeft;
+   368→    pauseImmediately();
+   369→  }, [pauseImmediately]);
+   370→
+   371→  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+   372→    if (!isDragging.current) return;
+   373→    const x = e.touches[0].pageX - scrollRef.current!.offsetLeft;
+   374→    const walk = (x - startX.current) * 1.2;
+   375→    const el = scrollRef.current!;
+   376→    el.scrollLeft = scrollStart.current - walk;
+   377→  }, []);
+   378→
+   379→  const handleTouchEnd = useCallback(() => {
+   380→    isDragging.current = false;
+   381→  }, []);
+   382→
+   383→  // Arrow navigation
+   384→  const navigateSlider = useCallback((direction: 'left' | 'right') => {
+   385→    const el = scrollRef.current;
+   386→    if (!el) return;
+   387→    const cardWidth = 320 + 24; // card width + gap
+   388→    el.scrollBy({ left: direction === 'left' ? -cardWidth : cardWidth, behavior: 'smooth' });
+   389→    setPaused(true);
+   390→  }, []);
+   391→
+   392→  return (
+   393→    <div
+   394→      className="relative group"
+   395→      onMouseEnter={() => setPaused(true)}
+   396→      onMouseLeave={() => { setPaused(false); handleMouseUp(); }}
+   397→      onTouchStart={handleTouchStart}
+   398→      onTouchMove={handleTouchMove}
+   399→      onTouchEnd={handleTouchEnd}
+   400→      onClick={pauseImmediately}
+   401→      onMouseDown={handleMouseDown}
+   402→      onMouseMove={handleMouseMove}
+   403→      onMouseUp={handleMouseUp}
+   404→      onMouseLeaveCapture={handleMouseLeave}
+   405→    >
+   406→      {/* Left Arrow */}
+   407→      {canScrollLeft && (
+   408→        <button
+   409→          onClick={(e) => { e.stopPropagation(); navigateSlider('left'); }}
+   410→          className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-border/50 hover:bg-white hover:shadow-xl transition-all md:opacity-0 md:group-hover:opacity-100"
+   411→          aria-label="Anterior"
+   412→        >
+   413→          <ChevronLeft className="w-5 h-5 text-foreground/70" />
+   414→        </button>
+   415→      )}
+   416→
+   417→      {/* Right Arrow */}
+   418→      {canScrollRight && (
+   419→        <button
+   420→          onClick={(e) => { e.stopPropagation(); navigateSlider('right'); }}
+   421→          className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-border/50 hover:bg-white hover:shadow-xl transition-all md:opacity-0 md:group-hover:opacity-100"
+   422→          aria-label="Siguiente"
+   423→        >
+   424→          <ChevronRight className="w-5 h-5 text-foreground/70" />
+   425→        </button>
+   426→      )}
+   427→
+   428→      {paused && (
+   429→        <div className="absolute top-2 right-2 z-20 px-2.5 py-1 bg-white/80 backdrop-blur-sm text-foreground/60 text-[10px] font-medium rounded-lg shadow-sm pointer-events-none">
+   430→          Pausado
+   431→        </div>
+   432→      )}
+   433→      <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-muted/30 to-transparent z-10 pointer-events-none" />
+   434→      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-muted/30 to-transparent z-10 pointer-events-none" />
+   435→      <div
+   436→        ref={scrollRef}
+   437→        className="flex gap-4 sm:gap-6 overflow-x-auto cursor-grab active:cursor-grabbing scrollbar-hide"
+   438→      >
+   439→        {dup.map((p, i) => (
+   440→          <div key={`${p.id}-${i}`} className="shrink-0 w-[280px] sm:w-[320px]">
+   441→            <ProductCard product={p} index={i % fp.length} />
+   442→          </div>
+   443→        ))}
+   444→      </div>
+   445→    </div>
+   446→  );
+   447→}
+   448→
+   449→// ─── Main Client Component ─────────────────────────────────────────────────
+   450→
+   451→export default function HomePageClient({ sanitySlides, sanityStats, sanityTestimonials, sanitySettings, sanityPartners }: HomePageClientProps) {
+   452→  const settingsId = sanitySettings?._id || null;
+   453→
+   454→  // ── Merge: Sanity data if available, local fallback ──
+   455→  const heroSlides: SlideData[] = (sanitySlides && sanitySlides.length > 0)
+   456→    ? sanitySlides.map((s) => {
+   457→        const words = s.title.split(' ');
+   458→        return {
+   459→          badge: sanitySettings?.tagline || '#1 en Materiales de Embalaje en Perú',
+   460→          title: words.slice(0, Math.ceil(words.length / 2)).join(' '),
+   461→          titleHighlight: words.slice(Math.ceil(words.length / 2)).join(' ') || s.title,
+   462→          description: s.description || 'Soluciones profesionales en embalaje para tu negocio.',
+   463→          ctaText: s.ctaText || 'Ver Catálogo',
+   464→          ctaLink: s.ctaLink || '/productos',
+   465→          secondaryText: 'Ver Productos',
+   466→          secondaryLink: '/productos',
+   467→          floaters: localHeroSlides[0].floaters,
+   468→          _sanityId: s._id,
+   469→        };
+   470→      })
+   471→    : localHeroSlides;
+   472→
+   473→  const stats = (sanityStats && sanityStats.length > 0)
+   474→    ? sanityStats.map((s) => ({ value: `${s.prefix || ''}${s.value.toLocaleString('es-PE')}${s.suffix || ''}`, label: s.label, icon: getIcon(s.icon), _sanityId: s._id }))
+   475→    : localStats.map((s) => ({ ...s, _sanityId: null }));
+   476→
+   477→  const testimonials = (sanityTestimonials && sanityTestimonials.length > 0)
+   478→    ? sanityTestimonials.map((t) => ({ author: t.author, company: t.company || '', role: t.role || '', quote: t.quote, rating: t.rating || 5, _sanityId: t._id }))
+   479→    : localTestimonials.map((t) => ({ ...t, _sanityId: null }));
+   480→
+   481→  const partners = (sanityPartners && sanityPartners.length > 0)
+   482→    ? sanityPartners.map((p) => ({ title: p.title, _sanityId: p._id }))
+   483→    : localPartners.map((name) => ({ title: name, _sanityId: null }));
+   484→
+   485→  // ── Sections from siteSettings (with fallback) ──
+   486→  const shippingItems = sanitySettings?.shippingItems?.length
+   487→    ? sanitySettings.shippingItems
+   488→    : localShippingInfo;
+   489→
+   490→  const trustItems = sanitySettings?.trustItems?.length
+   491→    ? sanitySettings.trustItems
+   492→    : localTrustIndicators;
+   493→
+   494→  const ctaData = sanitySettings?.ctaSection?.title
+   495→    ? sanitySettings.ctaSection
+   496→    : localCTA;
+   497→
+   498→  useScrollSpy({ ids: ['inicio', 'estadisticas', 'categorias', 'productos-populares', 'testimonios', 'envios', 'por-que-elegirnos', 'contacto'], offset: '70px' });
+   499→
+   500→  // ── GSAP ScrollTrigger refs ──
+   501→  const statsRef = useRef<HTMLDivElement>(null);
+   502→  const categoriesRef = useRef<HTMLDivElement>(null);
+   503→  const trustRef = useRef<HTMLDivElement>(null);
+   504→  const partnersRef = useRef<HTMLDivElement>(null);
+   505→
+   506→  useEffect(() => {
+   507→    // Stats counter animation
+   508→    const statsEl = statsRef.current;
+   509→    if (statsEl) {
+   510→      const items = statsEl.querySelectorAll('.gsap-stat');
+   511→      gsap.fromTo(items,
+   512→        { opacity: 0, y: 30, scale: 0.95 },
+   513→        {
+   514→          opacity: 1, y: 0, scale: 1,
+   515→          duration: 0.8,
+   516→          stagger: 0.12,
+   517→          ease: 'power3.out',
+   518→          scrollTrigger: { trigger: statsEl, start: 'top 90%', toggleActions: 'play none none none' },
+   519→        }
+   520→      );
+   521→    }
+   522→    // Categories stagger reveal
+   523→    const catsEl = categoriesRef.current;
+   524→    if (catsEl) {
+   525→      const items = catsEl.querySelectorAll('.gsap-cat');
+   526→      gsap.fromTo(items,
+   527→        { opacity: 0, y: 40, scale: 0.96 },
+   528→        {
+   529→          opacity: 1, y: 0, scale: 1,
+   530→          duration: 0.7,
+   531→          stagger: { each: 0.1, from: 'start' },
+   532→          ease: 'power3.out',
+   533→          scrollTrigger: { trigger: catsEl, start: 'top 88%', toggleActions: 'play none none none' },
+   534→        }
+   535→      );
+   536→    }
+   537→    // Trust items
+   538→    const trustEl = trustRef.current;
+   539→    if (trustEl) {
+   540→      const items = trustEl.querySelectorAll('.gsap-trust');
+   541→      gsap.fromTo(items,
+   542→        { opacity: 0, y: 50 },
+   543→        {
+   544→          opacity: 1, y: 0,
+   545→          duration: 0.9,
+   546→          stagger: { each: 0.15, from: 'random' },
+   547→          ease: 'power3.out',
+   548→          scrollTrigger: { trigger: trustEl, start: 'top 85%', toggleActions: 'play none none none' },
+   549→        }
+   550→      );
+   551→    }
+   552→    // Partners marquee fade
+   553→    const partnersEl = partnersRef.current;
+   554→    if (partnersEl) {
+   555→      const items = partnersEl.querySelectorAll('.gsap-partner');
+   556→      gsap.fromTo(items,
+   557→        { opacity: 0, scale: 0.9 },
+   558→        {
+   559→          opacity: 1, scale: 1,
+   560→          duration: 0.6,
+   561→          stagger: 0.06,
+   562→          ease: 'power2.out',
+   563→          scrollTrigger: { trigger: partnersEl, start: 'top 92%', toggleActions: 'play none none none' },
+   564→        }
+   565→      );
+   566→    }
+   567→    return () => { ScrollTrigger.getAll().forEach((t) => t.kill()); };
+   568→  }, []);
+   569→
+   570→  return (
+   571→    <div className="min-h-screen">
+   572→      <HeroCarousel slides={heroSlides} />
+   573→
+   574→      {/* Quick Links — categories bar */}
+   575→      <section
+   576→        className="bg-card border-b border-border/50"
+   577→        {...(settingsId ? dataSanityAttr(settingsId, 'siteSettings', '_root') : {})}
+   578→      >
+   579→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+   580→          <div className="flex items-center gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+   581→            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap shrink-0">Categorías</span>
+   582→            <div className="w-px h-6 bg-border/60 shrink-0" />
+   583→            <div className="flex items-center gap-2 sm:gap-3">
+   584→              {categories.map((cat) => (
+   585→                <Link key={cat.nombre} href={`/productos?categoria=${encodeURIComponent(cat.nombre)}`} className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-background border border-border/50 rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-all shrink-0 group">
+   586→                  <cat.icon className={`w-4 h-4 ${cat.iconColor} group-hover:scale-110 transition-transform`} />
+   587→                  <span className="text-sm font-medium text-foreground/80 group-hover:text-primary whitespace-nowrap transition-colors">{cat.nombre}</span>
+   588→                  <span className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-md">{cat.count}</span>
+   589→                </Link>
+   590→              ))}
+   591→            </div>
+   592→          </div>
+   593→        </div>
+   594→      </section>
+   595→
+   596→      {/* Stats — GSAP animated */}
+   597→      <section id="estadisticas" className="border-y border-border/50 bg-card">
+   598→        <div ref={statsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+   599→          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+   600→            {stats.map((stat: any, i: number) => (
+   601→              <div key={stat.label || i} className="gsap-stat flex items-center gap-3 opacity-0" {...(stat._sanityId ? dataSanityAttr(stat._sanityId, 'stat', '_root') : {})}>
+   602→                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0"><stat.icon className="w-5 h-5 text-primary" /></div>
+   603→                <div><p className="text-lg sm:text-xl font-extrabold text-foreground">{stat.value}</p><p className="text-xs text-muted-foreground">{stat.label}</p></div>
+   604→              </div>
+   605→            ))}
+   606→          </div>
+   607→        </div>
+   608→      </section>
+   609→
+   610→      {/* Categories Grid */}
+   611→      <section
+   612→        id="categorias"
+   613→        className="py-16 sm:py-20"
+   614→        {...(settingsId ? dataSanityAttr(settingsId, 'siteSettings', '_root') : {})}
+   615→      >
+   616→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   617→          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-10 sm:mb-12">
+   618→            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground mb-3">Categorías Destacadas</h2>
+   619→            <p className="text-muted-foreground max-w-md mx-auto">Encuentra todo lo que necesitas para el embalaje de tus productos</p>
+   620→          </motion.div>
+   621→          <div ref={categoriesRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+   622→            {categories.map((cat, i) => (
+   623→              <div key={cat.nombre} className="gsap-cat opacity-0">
+   624→                <Link href={`/productos?categoria=${encodeURIComponent(cat.nombre)}`}>
+   625→                  <div className="group relative bg-card border border-border/50 rounded-2xl overflow-hidden hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+   626→                    <div className="relative w-full aspect-[16/9] overflow-hidden bg-muted/30">
+   627→                      <Image src={cat.image} alt={cat.nombre} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw" />
+   628→                    </div>
+   629→                    <div className="p-4 sm:p-5">
+   630→                      <h3 className="text-sm sm:text-base font-bold text-foreground mb-1 group-hover:text-primary transition-colors">{cat.nombre}</h3>
+   631→                      <p className="text-xs text-muted-foreground line-clamp-2 hidden sm:block">{cat.descripcion}</p>
+   632→                      <p className="text-[10px] text-primary font-medium mt-2">{cat.count} productos</p>
+   633→                    </div>
+   634→                  </div>
+   635→                </Link>
+   636→              </div>
+   637→            ))}
+   638→          </div>
+   639→        </div>
+   640→      </section>
+   641→
+   642→      {/* Product Slider */}
+   643→      <section id="productos-populares" className="py-16 sm:py-20 bg-muted/30">
+   644→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   645→          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-end justify-between mb-10 sm:mb-12">
+   646→            <div>
+   647→              <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground mb-2">Productos Populares</h2>
+   648→              <p className="text-muted-foreground">Los más solicitados por nuestros clientes — desliza para ver más</p>
+   649→            </div>
+   650→            <Link href="/productos" className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Ver todos <ArrowRight className="w-4 h-4" /></Link>
+   651→          </motion.div>
+   652→          <ProductSlider />
+   653→          <div className="mt-8 text-center sm:hidden">
+   654→            <Link href="/productos"><button className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl shadow-lg shadow-primary/20">Ver todos los productos <ArrowRight className="w-4 h-4" /></button></Link>
+   655→          </div>
+   656→        </div>
+   657→      </section>
+   658→
+   659→      {/* Testimonials */}
+   660→      <section id="testimonios" className="py-16 sm:py-20">
+   661→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   662→          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-10 sm:mb-12">
+   663→            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground mb-3">Lo que dicen nuestros clientes</h2>
+   664→            <p className="text-muted-foreground max-w-md mx-auto">Más de 2,500 negocios confían en GUDSTOR PACK para sus materiales de embalaje</p>
+   665→          </motion.div>
+   666→          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+   667→            {testimonials.map((t: any, i: number) => (
+   668→              <motion.div key={t.author || i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="bg-card border border-border/50 rounded-2xl p-6 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 flex flex-col" {...(t._sanityId ? dataSanityAttr(t._sanityId, 'testimonial', '_root') : {})}>
+   669→                <Quote className="w-8 h-8 text-primary/20 mb-4 shrink-0" />
+   670→                <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">&ldquo;{t.quote}&rdquo;</p>
+   671→                <div className="flex items-center gap-1 mb-3">{[...Array(t.rating)].map((_, j) => (<Star key={j} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />))}</div>
+   672→                <div className="border-t border-border/50 pt-4">
+   673→                  <p className="text-sm font-bold text-foreground">{t.author}</p>
+   674→                  <p className="text-xs text-muted-foreground">{t.role}{t.company ? ` · ${t.company}` : ''}</p>
+   675→                </div>
+   676→              </motion.div>
+   677→            ))}
+   678→          </div>
+   679→        </div>
+   680→      </section>
+   681→
+   682→      {/* Envíos — from siteSettings.shippingItems */}
+   683→      <section
+   684→        id="envios"
+   685→        className="py-16 sm:py-20 bg-muted/30"
+   686→        {...(settingsId ? dataSanityAttr(settingsId, 'siteSettings', 'shippingItems') : {})}
+   687→      >
+   688→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   689→          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-10 sm:mb-12">
+   690→            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground mb-3">Envíos a Todo el Perú</h2>
+   691→            <p className="text-muted-foreground max-w-md mx-auto">Tu mercancía llega segura y a tiempo, sin importar dónde te encuentres</p>
+   692→          </motion.div>
+   693→          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+   694→            {shippingItems.map((item: any, i: number) => {
+   695→              const Icon = getIcon(item.icon);
+   696→              return (
+   697→                <motion.div
+   698→                  key={item.title || i}
+   699→                  initial={{ opacity: 0, y: 20 }}
+   700→                  whileInView={{ opacity: 1, y: 0 }}
+   701→                  viewport={{ once: true }}
+   702→                  transition={{ delay: i * 0.1 }}
+   703→                  className="bg-card border border-border/50 rounded-2xl p-6 text-center hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+   704→                  {...(settingsId ? dataSanityAttr(settingsId, 'siteSettings', `shippingItems[${i}]`) : {})}
+   705→                >
+   706→                  <div className="w-14 h-14 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl flex items-center justify-center mx-auto mb-4"><Icon className="w-7 h-7 text-primary" /></div>
+   707→                  <h3 className="text-base font-bold text-foreground mb-2">{item.title}</h3>
+   708→                  <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+   709→                </motion.div>
+   710→              );
+   711→            })}
+   712→          </div>
+   713→        </div>
+   714→      </section>
+   715→
+   716→      {/* ¿Por qué elegirnos? — from siteSettings.trustItems */}
+   717→      <section
+   718→        id="por-que-elegirnos"
+   719→        className="py-16 sm:py-20"
+   720→        {...(settingsId ? dataSanityAttr(settingsId, 'siteSettings', 'trustItems') : {})}
+   721→      >
+   722→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   723→          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-10 sm:mb-12">
+   724→            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground mb-3">¿Por qué elegirnos?</h2>
+   725→            <p className="text-muted-foreground max-w-md mx-auto">Nos comprometemos con la calidad y el servicio para hacer crecer tu negocio</p>
+   726→          </motion.div>
+   727→          <div ref={trustRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+   728→            {trustItems.map((item: any, i: number) => {
+   729→              const Icon = getIcon(item.icon);
+   730→              return (
+   731→                <div
+   732→                  key={item.title || i}
+   733→                  className="gsap-trust bg-card border border-border/50 rounded-2xl p-6 text-center hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 opacity-0"
+   734→                  {...(settingsId ? dataSanityAttr(settingsId, 'siteSettings', `trustItems[${i}]`) : {})}
+   735→                >
+   736→                  <div className="w-14 h-14 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl flex items-center justify-center mx-auto mb-4"><Icon className="w-7 h-7 text-primary" /></div>
+   737→                  <h3 className="text-base font-bold text-foreground mb-2">{item.title}</h3>
+   738→                  <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+   739→                </div>
+   740→              );
+   741→            })}
+   742→          </div>
+   743→        </div>
+   744→      </section>
+   745→
+   746→      {/* Partners */}
+   747→      <section className="py-12 bg-card border-y border-border/50">
+   748→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   749→          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-8">
+   750→            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Empresas que confían en nosotros</p>
+   751→          </motion.div>
+   752→          <div ref={partnersRef} className="flex items-center justify-center gap-8 sm:gap-12 flex-wrap">
+   753→            {partners.map((p: any, i: number) => (
+   754→              <div key={i} className="gsap-partner flex items-center justify-center w-32 h-16 bg-muted/50 rounded-xl border border-border/30 px-4 opacity-0" {...(p._sanityId ? dataSanityAttr(p._sanityId, 'partner', '_root') : {})}>
+   755→                <span className="text-xs font-semibold text-muted-foreground/60 text-center">{p.title}</span>
+   756→              </div>
+   757→            ))}
+   758→          </div>
+   759→        </div>
+   760→      </section>
+   761→
+   762→      {/* CTA — from siteSettings.ctaSection */}
+   763→      <section
+   764→        id="contacto"
+   765→        className="py-16 sm:py-20 bg-gradient-to-r from-primary to-secondary"
+   766→        {...(settingsId ? dataSanityAttr(settingsId, 'siteSettings', 'ctaSection') : {})}
+   767→      >
+   768→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+   769→          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="max-w-2xl mx-auto">
+   770→            {ctaData.badge && (
+   771→              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full mb-6">
+   772→                <Award className="w-4 h-4 text-white" />
+   773→                <span className="text-sm font-medium text-white/90">{ctaData.badge}</span>
+   774→              </div>
+   775→            )}
+   776→            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white mb-4">{ctaData.title}</h2>
+   777→            <p className="text-white/80 text-lg mb-8 leading-relaxed">{ctaData.subtitle}</p>
+   778→            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+   779→              {ctaData.ctaText && (
+   780→                <Link href={ctaData.ctaLink || '/productos'}>
+   781→                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary font-bold rounded-xl shadow-xl hover:shadow-2xl transition-shadow">
+   782→                    {ctaData.ctaText} <ArrowRight className="w-5 h-5" />
+   783→                  </motion.button>
+   784→                </Link>
+   785→              )}
+   786→              {ctaData.secondaryCtaText && (
+   787→                <Link href={ctaData.secondaryCtaLink || '#'} target="_blank" rel="noopener noreferrer">
+   788→                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-flex items-center gap-2 px-8 py-4 bg-white/10 border-2 border-white/30 text-white font-bold rounded-xl hover:bg-white/20 transition-colors">
+   789→                    <MessageCircle className="w-5 h-5" /> {ctaData.secondaryCtaText}
+   790→                  </motion.button>
+   791→                </Link>
+   792→              )}
+   793→            </div>
+   794→          </motion.div>
+   795→        </div>
+   796→      </section>
+   797→    </div>
+   798→  );
+   799→}

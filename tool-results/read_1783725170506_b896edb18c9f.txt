@@ -1,0 +1,680 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState, useMemo, useCallback, useEffect, useRef, Suspense } from 'react';
+     4→     4→import { useSearchParams, useRouter } from 'next/navigation';
+     5→     5→import { motion, AnimatePresence } from 'framer-motion';
+     6→     6→import {
+     7→     7→  SlidersHorizontal,
+     8→     8→  X,
+     9→     9→  Package,
+    10→    10→  ChevronDown,
+    11→    11→  Grid3X3,
+    12→    12→  List,
+    13→    13→  Box,
+    14→    14→  Layers,
+    15→    15→  Ruler,
+    16→    16→  CircleDot,
+    17→    17→  ShoppingBag,
+    18→    18→  LayoutGrid,
+    19→    19→  Filter,
+    20→    20→} from 'lucide-react';
+    21→    21→import ProductCard from '@/components/product-card';
+    22→    22→import ImmersiveBanner from '@/components/immersive-banner';
+    23→    23→import products from '@/data/products.json';
+    24→    24→import { useScrollSpy } from '@/lib/use-scroll-spy';
+    25→    25→
+    26→    26→const visibleProducts = products;
+    27→    27→
+    28→    28→// ── SEO meta data por categoría ────────────────────────────────────
+    29→    29→const CATEGORY_META: Record<string, { title: string; description: string }> = {
+    30→    30→  Cajas: {
+    31→    31→    title: 'Cajas de Embalaje | GUDSTOR PACK',
+    32→    32→    description: 'Cajas de cartón corrugado, autoarmables, doble pared, grado alimenticio y más. Compra por mayor con descuentos en GUDSTOR PACK. Envío a todo Perú.',
+    33→    33→  },
+    34→    34→  Films: {
+    35→    35→    title: 'Films y Plásticos de Embalaje | GUDSTOR PACK',
+    36→    36→    description: 'Film estirable, termoencogible, antiestático, alimentario y microperforado. Soluciones de paletizado y protección industrial en GUDSTOR PACK.',
+    37→    37→  },
+    38→    38→  Cintas: {
+    39→    39→    title: 'Cintas Adhesivas de Empaque | GUDSTOR PACK',
+    40→    40→    description: 'Cintas adhesivas profesionales, de papel kraft, industrial reforzada, doble cara e impresa personalizada. Precios mayoristas en GUDSTOR PACK.',
+    41→    41→  },
+    42→    42→  'Protección': {
+    43→    43→    title: 'Materiales de Protección para Embalaje | GUDSTOR PACK',
+    44→    44→    description: 'Plástico burbuja, espuma poliestireno, papel de empaque, relleno ecológico y protectores de esquinas. Protege tus mercancías con GUDSTOR PACK.',
+    45→    45→  },
+    46→    46→  Bolsas: {
+    47→    47→    title: 'Bolsas de Embalaje | GUDSTOR PACK',
+    48→    48→    description: 'Bolsas de envío courier, kraft, zip lock, troqueladas, no tejidas, biodegradables y más. Soluciones de empaque mayoristas en GUDSTOR PACK.',
+    49→    49→  },
+    50→    50→};
+    51→    51→
+    52→    52→const DEFAULT_META = {
+    53→    53→  title: 'Catálogo de Productos de Embalaje | GUDSTOR PACK',
+    54→    54→  description: 'Descubre nuestra amplia variedad de cajas, films, cintas, bolsas y materiales de protección para embalaje. Precios mayoristas con descuentos. Envío a todo Perú.',
+    55→    55→};
+    56→    56→
+    57→    57→// ── Iconos por categoría ──────────────────────────────────────────
+    58→    58→const CATEGORY_ICONS: Record<string, typeof Box> = {
+    59→    59→  Cajas: Box,
+    60→    60→  Films: Layers,
+    61→    61→  Cintas: Ruler,
+    62→    62→  'Protección': CircleDot,
+    63→    63→  Bolsas: ShoppingBag,
+    64→    64→};
+    65→    65→
+    66→    66→// ── Colores por categoría ──────────────────────────────────────────
+    67→    67→const CATEGORY_COLORS: Record<string, { bg: string; active: string; icon: string }> = {
+    68→    68→  Cajas:       { bg: 'bg-amber-500/8',   active: 'bg-amber-500/15 text-amber-700',   icon: 'text-amber-600' },
+    69→    69→  Films:       { bg: 'bg-teal-500/8',    active: 'bg-teal-500/15 text-teal-700',     icon: 'text-teal-600' },
+    70→    70→  Cintas:      { bg: 'bg-blue-500/8',    active: 'bg-blue-500/15 text-blue-700',    icon: 'text-blue-600' },
+    71→    71→  'Protección':{ bg: 'bg-purple-500/8', active: 'bg-purple-500/15 text-purple-700', icon: 'text-purple-600' },
+    72→    72→  Bolsas:      { bg: 'bg-green-500/8',   active: 'bg-green-500/15 text-green-700',  icon: 'text-green-600' },
+    73→    73→};
+    74→    74→
+    75→    75→// ── Subcategorías reales basadas en el catálogo ─────────────────────
+    76→    76→const SUBCATEGORY_MAP: Record<string, string[]> = {
+    77→    77→  Cajas: [
+    78→    78→    'Archiveras',
+    79→    79→    'Corrugadas',
+    80→    80→    'Doble Corrugado',
+    81→    81→    'E-commerce',
+    82→    82→    'Pizza',
+    83→    83→  ],
+    84→    84→  Films: [
+    85→    85→    'Transparente',
+    86→    86→    'Negro',
+    87→    87→  ],
+    88→    88→  Cintas: [
+    89→    89→    'Embalaje',
+    90→    90→    'Fragil / Seguridad',
+    91→    91→  ],
+    92→    92→  Protección: [
+    93→    93→    'Burbupack',
+    94→    94→    'Cartón Corrugado',
+    95→    95→    'Planchas',
+    96→    96→    'Papel y Viruta',
+    97→    97→  ],
+    98→    98→  Bolsas: [],
+    99→    99→};
+   100→   100→
+   101→   101→// ── Mapeo de subcategorías a patrones de filtrado (tags + nombre + material) ──
+   102→   102→const SUBCATEGORY_TAG_MAP: Record<string, string[]> = {
+   103→   103→  // Cajas
+   104→   104→  'Archiveras': ['archivo', 'oficina', 'organización', 'archivera'],
+   105→   105→  'Corrugadas': ['professional', 'resistente'],
+   106→   106→  'Doble Corrugado': ['doble pared', 'reforzado', 'industrial', 'doble corrugado'],
+   107→   107→  'E-commerce': ['ecommerce', 'envío', 'correría', 'postal'],
+   108→   108→  'Pizza': ['alimentario', 'delivery', 'caliente', 'pizza'],
+   109→   109→  // Films
+   110→   110→  'Transparente': ['transparente'],
+   111→   111→  'Negro': ['opaco', 'negro'],
+   112→   112→  // Cintas
+   113→   113→  'Embalaje': ['cierre', 'empaque', 'transparente'],
+   114→   114→  'Fragil / Seguridad': ['fragil', 'seguridad', 'advertencia'],
+   115→   115→  // Protección
+   116→   116→  'Burbupack': ['burbupack', 'burbuja'],
+   117→   117→  'Cartón Corrugado': ['carton grueso', 'cartón grueso'],
+   118→   118→  'Planchas': ['plancha', 'tecnopor', 'microcorrugado'],
+   119→   119→  'Papel y Viruta': ['papel para embalar', 'viruta'],
+   120→   120→};
+   121→   121→
+   122→   122→function matchSubcategory(product: (typeof visibleProducts)[0], subcat: string): boolean {
+   123→   123→  const patterns = SUBCATEGORY_TAG_MAP[subcat];
+   124→   124→  if (!patterns) return false;
+   125→   125→  const productTags = (product.etiquetas || []).map((t) => t.toLowerCase());
+   126→   126→  const nameLower = product.nombre.toLowerCase();
+   127→   127→  const materialLower = product.material.toLowerCase();
+   128→   128→
+   129→   129→  return patterns.some((pattern) => {
+   130→   130→    const p = pattern.toLowerCase();
+   131→   131→    return productTags.includes(p) || nameLower.includes(p) || materialLower.includes(p);
+   132→   132→  });
+   133→   133→}
+   134→   134→
+   135→   135→// ── Sidebar de Categorías con Subcategorías Expandibles ────────────
+   136→   136→function CategorySidebar({
+   137→   137→  selectedCategory,
+   138→   138→  selectedSubcategory,
+   139→   139→  onCategoryClick,
+   140→   140→  onSubcategoryClick,
+   141→   141→  onClearAll,
+   142→   142→  isMobile = false,
+   143→   143→  onClose,
+   144→   144→}: {
+   145→   145→  selectedCategory: string;
+   146→   146→  selectedSubcategory: string;
+   147→   147→  onCategoryClick: (cat: string) => void;
+   148→   148→  onSubcategoryClick: (cat: string, sub: string) => void;
+   149→   149→  onClearAll: () => void;
+   150→   150→  isMobile?: boolean;
+   151→   151→  onClose?: () => void;
+   152→   152→}) {
+   153→   153→  const categories = useMemo(() => {
+   154→   154→    return ['Cajas', 'Films', 'Cintas', 'Protección', 'Bolsas'];
+   155→   155→  }, []);
+   156→   156→
+   157→   157→  // ── Exclusive accordion: only one category expanded at a time ──
+   158→   158→  const [expandedCat, setExpandedCat] = useState<string | null>(
+   159→   159→    selectedCategory || null
+   160→   160→  );
+   161→   161→
+   162→   162→  // Sync accordion with parent selectedCategory (e.g. breadcrumb clicks)
+   163→   163→  useEffect(() => {
+   164→   164→    if (selectedCategory) {
+   165→   165→      setExpandedCat(selectedCategory);
+   166→   166→    }
+   167→   167→  }, [selectedCategory]);
+   168→   168→
+   169→   169→  const handleCategoryClickLocal = (cat: string) => {
+   170→   170→    onCategoryClick(cat);
+   171→   171→    // Exclusive accordion: same cat → collapse, different cat → expand
+   172→   172→    setExpandedCat((prev) => (prev === cat ? null : cat));
+   173→   173→  };
+   174→   174→
+   175→   175→  const handleClear = () => {
+   176→   176→    onClearAll();
+   177→   177→    setExpandedCat(null);
+   178→   178→    if (isMobile && onClose) onClose();
+   179→   179→  };
+   180→   180→
+   181→   181→  const hasActiveFilter = selectedCategory || selectedSubcategory;
+   182→   182→
+   183→   183→  return (
+   184→   184→    <div className="flex flex-col h-full">
+   185→   185→      {/* Mobile Header */}
+   186→   186→      {isMobile && (
+   187→   187→        <div className="flex items-center justify-between px-5 py-4 border-b border-border/50 shrink-0">
+   188→   188→          <div className="flex items-center gap-2.5">
+   189→   189→            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+   190→   190→              <LayoutGrid className="w-4 h-4 text-primary" />
+   191→   191→            </div>
+   192→   192→            <h2 className="text-base font-bold text-foreground">Categorías</h2>
+   193→   193→          </div>
+   194→   194→          <button
+   195→   195→            onClick={onClose}
+   196→   196→            className="w-8 h-8 flex items-center justify-center hover:bg-muted rounded-lg transition-colors"
+   197→   197→          >
+   198→   198→            <X className="w-4 h-4" />
+   199→   199→          </button>
+   200→   200→        </div>
+   201→   201→      )}
+   202→   202→
+   203→   203→      {/* Desktop Title */}
+   204→   204→      {!isMobile && (
+   205→   205→        <div className="flex items-center gap-2.5 mb-4 shrink-0">
+   206→   206→          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+   207→   207→            <Filter className="w-4 h-4 text-primary" />
+   208→   208→          </div>
+   209→   209→          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+   210→   210→            Categorías
+   211→   211→          </h3>
+   212→   212→        </div>
+   213→   213→      )}
+   214→   214→
+   215→   215→      {/* Scrollable content */}
+   216→   216→      <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 pb-6' : ''}`}>
+   217→   217→        {/* Clear filters */}
+   218→   218→        {hasActiveFilter && (
+   219→   219→          <button
+   220→   220→            onClick={handleClear}
+   221→   221→            className="w-full text-left px-3 py-2 mb-3 text-xs font-semibold text-primary bg-primary/5 border border-primary/15 rounded-lg hover:bg-primary/10 transition-colors"
+   222→   222→          >
+   223→   223→            <span className="flex items-center gap-1.5">
+   224→   224→              <X className="w-3 h-3" />
+   225→   225→              Limpiar filtros
+   226→   226→            </span>
+   227→   227→          </button>
+   228→   228→        )}
+   229→   229→
+   230→   230→        {/* All products button */}
+   231→   231→        <button
+   232→   232→          onClick={handleClear}
+   233→   233→          className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition-all mb-2 ${
+   234→   234→            !selectedCategory
+   235→   235→              ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+   236→   236→              : 'text-foreground/70 hover:bg-muted/60 hover:text-foreground'
+   237→   237→          }`}
+   238→   238→        >
+   239→   239→          <span className="flex items-center gap-2.5">
+   240→   240→            <LayoutGrid className="w-4 h-4" />
+   241→   241→            <span>Todos los productos</span>
+   242→   242→            <span className={`ml-auto text-[11px] font-semibold ${!selectedCategory ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+   243→   243→              {visibleProducts.length}
+   244→   244→            </span>
+   245→   245→          </span>
+   246→   246→        </button>
+   247→   247→
+   248→   248→        {/* Categories with expandable subcategories */}
+   249→   249→        <div className="space-y-0.5">
+   250→   250→          {categories.map((cat) => {
+   251→   251→            const isExpanded = expandedCat === cat;
+   252→   252→            const isActive = selectedCategory === cat;
+   253→   253→            const hasSubActive = selectedCategory === cat && selectedSubcategory;
+   254→   254→            const catCount = visibleProducts.filter((p) => p.categoria === cat).length;
+   255→   255→            const subcats = SUBCATEGORY_MAP[cat] || [];
+   256→   256→            const Icon = CATEGORY_ICONS[cat] || Box;
+   257→   257→            const colors = CATEGORY_COLORS[cat] || { bg: 'bg-muted/50', active: 'bg-primary/15 text-primary', icon: 'text-primary' };
+   258→   258→
+   259→   259→            return (
+   260→   260→              <div key={cat} className="rounded-xl overflow-hidden">
+   261→   261→                {/* Category row */}
+   262→   262→                <button
+   263→   263→                  onClick={() => handleCategoryClickLocal(cat)}
+   264→   264→                  className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all flex items-center gap-2.5 group ${
+   265→   265→                    isActive
+   266→   266→                      ? `${colors.active} font-semibold shadow-sm`
+   267→   267→                      : 'text-foreground/80 hover:bg-muted/40 font-medium'
+   268→   268→                  }`}
+   269→   269→                >
+   270→   270→                  <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+   271→   271→                    isActive ? 'bg-white/30' : `${colors.bg}`
+   272→   272→                  }`}>
+   273→   273→                    <Icon className={`w-3.5 h-3.5 ${isActive ? '' : colors.icon}`} />
+   274→   274→                  </div>
+   275→   275→                  <span className="flex-1 truncate">{cat}</span>
+   276→   276→                  <div className="flex items-center gap-1.5">
+   277→   277→                    <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${
+   278→   278→                      isActive ? 'bg-white/20' : 'bg-muted/50 text-muted-foreground'
+   279→   279→                    }`}>
+   280→   280→                      {catCount}
+   281→   281→                    </span>
+   282→   282→                    {subcats.length > 0 && (
+   283→   283→                      <motion.span
+   284→   284→                        animate={{ rotate: isExpanded ? 180 : 0 }}
+   285→   285→                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+   286→   286→                        className={`${isActive ? 'text-white/70' : 'text-muted-foreground/50'}`}
+   287→   287→                      >
+   288→   288→                        <ChevronDown className="w-3.5 h-3.5" />
+   289→   289→                      </motion.span>
+   290→   290→                    )}
+   291→   291→                  </div>
+   292→   292→                </button>
+   293→   293→
+   294→   294→                {/* Subcategories — expandable */}
+   295→   295→                <AnimatePresence initial={false}>
+   296→   296→                  {isExpanded && subcats.length > 0 && (
+   297→   297→                    <motion.div
+   298→   298→                      initial={{ height: 0, opacity: 0 }}
+   299→   299→                      animate={{ height: 'auto', opacity: 1 }}
+   300→   300→                      exit={{ height: 0, opacity: 0 }}
+   301→   301→                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+   302→   302→                      className="overflow-hidden"
+   303→   303→                    >
+   304→   304→                      <div className={`ml-[18px] pl-3 ${hasSubActive ? 'border-l-2 border-primary/50' : 'border-l-2 border-border/40'} space-y-px py-1.5`}
+   305→   305→                      >
+   306→   306→                        {subcats.map((sub) => {
+   307→   307→                          const isSubActive = selectedSubcategory === sub;
+   308→   308→                          const subCount = visibleProducts.filter(
+   309→   309→                            (p) => p.categoria === cat && matchSubcategory(p, sub)
+   310→   310→                          ).length;
+   311→   311→
+   312→   312→                          if (subCount === 0) return null;
+   313→   313→
+   314→   314→                          return (
+   315→   315→                            <button
+   316→   316→                              key={sub}
+   317→   317→                              onClick={() => {
+   318→   318→                                onSubcategoryClick(cat, sub);
+   319→   319→                                if (isMobile && onClose) onClose();
+   320→   320→                              }}
+   321→   321→                              className={`w-full text-left px-3 py-[7px] rounded-lg text-[13px] transition-all flex items-center justify-between ${
+   322→   322→                                isSubActive
+   323→   323→                                  ? 'bg-primary/10 text-primary font-medium shadow-sm'
+   324→   324→                                  : 'text-foreground/55 hover:bg-muted/40 hover:text-foreground/80'
+   325→   325→                              }`}
+   326→   326→                            >
+   327→   327→                              <span className="flex items-center gap-1.5">
+   328→   328→                                <span className={`w-1 h-1 rounded-full shrink-0 ${isSubActive ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+   329→   329→                                <span>{sub}</span>
+   330→   330→                              </span>
+   331→   331→                              <span className={`text-[10px] font-semibold ${isSubActive ? 'text-primary/70' : 'text-muted-foreground/50'}`}>
+   332→   332→                                {subCount}
+   333→   333→                              </span>
+   334→   334→                            </button>
+   335→   335→                          );
+   336→   336→                        })}
+   337→   337→                      </div>
+   338→   338→                    </motion.div>
+   339→   339→                  )}
+   340→   340→                </AnimatePresence>
+   341→   341→              </div>
+   342→   342→            );
+   343→   343→          })}
+   344→   344→        </div>
+   345→   345→      </div>
+   346→   346→    </div>
+   347→   347→  );
+   348→   348→}
+   349→   349→
+   350→   350→// ── Main Content ───────────────────────────────────────────────────
+   351→   351→function ProductosContent() {
+   352→   352→  const searchParams = useSearchParams();
+   353→   353→
+   354→   354→  // ── Read URL params on mount (deep linking from WhatsApp/shared links) ──
+   355→   355→  const categoriaParam = searchParams.get('categoria') || '';
+   356→   356→  const subcategoriaParam = searchParams.get('subcategoria') || '';
+   357→   357→
+   358→   358→  const router = useRouter();
+   359→   359→  const [selectedCategory, setSelectedCategory] = useState(categoriaParam);
+   360→   360→  const [selectedSubcategory, setSelectedSubcategory] = useState(subcategoriaParam);
+   361→   361→  const [sortBy, setSortBy] = useState('nombre');
+   362→   362→  const [isFilterOpen, setIsFilterOpen] = useState(false);
+   363→   363→  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+   364→   364→  const isFirstRender = useRef(true);
+   365→   365→
+   366→   366→  useScrollSpy({
+   367→   367→    ids: ['catalogo', 'productos-listado', 'sidebar-filtros'],
+   368→   368→    offset: '100px',
+   369→   369→  });
+   370→   370→
+   371→   371→  // ── Sync state → URL via Next.js router (keeps internal state in sync) ──
+   372→   372→  useEffect(() => {
+   373→   373→    if (isFirstRender.current) {
+   374→   374→      isFirstRender.current = false;
+   375→   375→      return;
+   376→   376→    }
+   377→   377→    const params = new URLSearchParams();
+   378→   378→    if (selectedCategory) params.set('categoria', selectedCategory);
+   379→   379→    if (selectedSubcategory) params.set('subcategoria', selectedSubcategory);
+   380→   380→    const qs = params.toString();
+   381→   381→    router.replace(`/productos${qs ? `?${qs}` : ''}`, { scroll: false });
+   382→   382→  }, [selectedCategory, selectedSubcategory, router]);
+   383→   383→
+   384→   384→  // ── Dynamic browser title + meta description ──
+   385→   385→  useEffect(() => {
+   386→   386→    const meta = CATEGORY_META[selectedCategory] || DEFAULT_META;
+   387→   387→    const pageTitle = selectedSubcategory
+   388→   388→      ? `${selectedSubcategory} | ${selectedCategory} | GUDSTOR PACK`
+   389→   389→      : meta.title;
+   390→   390→    document.title = pageTitle;
+   391→   391→    // Update meta description
+   392→   392→    const descEl = document.querySelector('meta[name="description"]');
+   393→   393→    if (descEl) {
+   394→   394→      descEl.setAttribute('content', meta.description);
+   395→   395→    }
+   396→   396→    // Update canonical URL
+   397→   397→    const canonEl = document.querySelector('link[rel="canonical"]');
+   398→   398→    if (canonEl) {
+   399→   399→      const params = new URLSearchParams();
+   400→   400→      if (selectedCategory) params.set('categoria', selectedCategory);
+   401→   401→      if (selectedSubcategory) params.set('subcategoria', selectedSubcategory);
+   402→   402→      const qs = params.toString();
+   403→   403→      canonEl.setAttribute('href', `https://gudstor-pack.vercel.app/productos${qs ? `?${qs}` : ''}`);
+   404→   404→    }
+   405→   405→  }, [selectedCategory, selectedSubcategory]);
+   406→   406→
+   407→   407→  const filteredProducts = useMemo(() => {
+   408→   408→    let result = [...visibleProducts];
+   409→   409→
+   410→   410→    if (selectedCategory) {
+   411→   411→      result = result.filter((p) => p.categoria === selectedCategory);
+   412→   412→    }
+   413→   413→    if (selectedSubcategory && selectedCategory) {
+   414→   414→      result = result.filter((p) => matchSubcategory(p, selectedSubcategory));
+   415→   415→    }
+   416→   416→
+   417→   417→    result.sort((a, b) => {
+   418→   418→      switch (sortBy) {
+   419→   419→        case 'destacados':
+   420→   420→          return (b.destacado ? 1 : 0) - (a.destacado ? 1 : 0) || a.nombre.localeCompare(b.nombre);
+   421→   421→        case 'precio-asc':
+   422→   422→          return a.precio - b.precio;
+   423→   423→        case 'precio-desc':
+   424→   424→          return b.precio - a.precio;
+   425→   425→        case 'nombre':
+   426→   426→        default:
+   427→   427→          return a.nombre.localeCompare(b.nombre);
+   428→   428→      }
+   429→   429→    });
+   430→   430→
+   431→   431→    return result;
+   432→   432→  }, [selectedCategory, selectedSubcategory, sortBy]);
+   433→   433→
+   434→   434→  // Ref to always read latest state inside stable callbacks (prevents stale closures)
+   435→   435→  const filterRef = useRef({ selectedCategory: '', selectedSubcategory: '' });
+   436→   436→  filterRef.current = { selectedCategory, selectedSubcategory };
+   437→   437→
+   438→   438→  const handleCategoryClick = useCallback((cat: string) => {
+   439→   439→    const { selectedCategory: prev } = filterRef.current;
+   440→   440→    if (cat === prev) {
+   441→   441→      setSelectedCategory('');
+   442→   442→      setSelectedSubcategory('');
+   443→   443→    } else {
+   444→   444→      setSelectedCategory(cat);
+   445→   445→      setSelectedSubcategory('');
+   446→   446→    }
+   447→   447→  }, []);
+   448→   448→
+   449→   449→  const handleSubcategoryClick = useCallback((cat: string, sub: string) => {
+   450→   450→    const { selectedCategory: prevCat, selectedSubcategory: prevSub } = filterRef.current;
+   451→   451→    if (sub === prevSub && cat === prevCat) {
+   452→   452→      setSelectedSubcategory('');
+   453→   453→    } else {
+   454→   454→      setSelectedCategory(cat);
+   455→   455→      setSelectedSubcategory(sub);
+   456→   456→    }
+   457→   457→  }, []);
+   458→   458→
+   459→   459→  const clearAll = useCallback(() => {
+   460→   460→    setSelectedCategory('');
+   461→   461→    setSelectedSubcategory('');
+   462→   462→  }, []);
+   463→   463→
+   464→   464→  const activeFiltersCount = (selectedCategory ? 1 : 0) + (selectedSubcategory ? 1 : 0);
+   465→   465→
+   466→   466→  const breadcrumbs = useMemo(() => {
+   467→   467→    const parts: { label: string; action?: () => void }[] = [];
+   468→   468→    parts.push({ label: 'Inicio' });
+   469→   469→    parts.push({ label: 'Productos' });
+   470→   470→    if (selectedCategory) {
+   471→   471→      parts.push({
+   472→   472→        label: selectedCategory,
+   473→   473→        action: () => {
+   474→   474→          setSelectedSubcategory('');
+   475→   475→        },
+   476→   476→      });
+   477→   477→    }
+   478→   478→    if (selectedSubcategory) {
+   479→   479→      parts.push({ label: selectedSubcategory });
+   480→   480→    }
+   481→   481→    return parts;
+   482→   482→  }, [selectedCategory, selectedSubcategory]);
+   483→   483→
+   484→   484→  return (
+   485→   485→    <div className="min-h-screen bg-background">
+   486→   486→      {/* ── Immersive Hero Banner ─────────────────────────────── */}
+   487→   487→      <ImmersiveBanner
+   488→   488→        title={selectedSubcategory || (selectedCategory ? selectedCategory : 'Catálogo de Productos')}
+   489→   489→        subtitle={`${filteredProducts.length} ${filteredProducts.length === 1 ? 'producto' : 'productos'} disponibles`}
+   490→   490→        breadcrumb={breadcrumbs.map(b => ({ label: b.label, href: b.action ? '#' : undefined }))}
+   491→   491→      />
+   492→   492→
+   493→   493→      {/* ── Main Layout: Sidebar + Products ─────────────────────── */}
+   494→   494→      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-6 sm:pb-8">
+   495→   495→        {/* Toolbar: Filter + Sort + View Mode — sticky below banner */}
+   496→   496→        <div id="catalogo" className="flex items-center gap-2 mb-4 sm:mb-6">
+   497→   497→          {/* Filter toggle (mobile) */}
+   498→   498→          <button
+   499→   499→            onClick={() => setIsFilterOpen(!isFilterOpen)}
+   500→   500→            className={`lg:hidden inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+   501→   501→              isFilterOpen
+   502→   502→                ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+   503→   503→                : 'bg-card border border-border hover:bg-muted/50'
+   504→   504→            }`}
+   505→   505→          >
+   506→   506→            <SlidersHorizontal className="w-4 h-4" />
+   507→   507→            <span>Categorías</span>
+   508→   508→            {activeFiltersCount > 0 && (
+   509→   509→              <span className="w-5 h-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+   510→   510→                {activeFiltersCount}
+   511→   511→              </span>
+   512→   512→            )}
+   513→   513→          </button>
+   514→   514→
+   515→   515→          <div className="flex-1" />
+   516→   516→
+   517→   517→          {/* Sort */}
+   518→   518→          <div className="relative">
+   519→   519→            <select
+   520→   520→              value={sortBy}
+   521→   521→              onChange={(e) => setSortBy(e.target.value)}
+   522→   522→              className="appearance-none bg-card border border-border rounded-xl px-4 py-2.5 pr-8 text-sm font-medium outline-none focus:border-primary cursor-pointer"
+   523→   523→            >
+   524→   524→              <option value="destacados">Más vendidos</option>
+   525→   525→              <option value="nombre">Nombre A-Z</option>
+   526→   526→              <option value="precio-asc">Precio: Menor a Mayor</option>
+   527→   527→              <option value="precio-desc">Precio: Mayor a Menor</option>
+   528→   528→            </select>
+   529→   529→            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+   530→   530→          </div>
+   531→   531→
+   532→   532→          {/* View Mode */}
+   533→   533→          <div className="hidden sm:flex items-center bg-card border border-border rounded-xl overflow-hidden">
+   534→   534→            <button
+   535→   535→              onClick={() => setViewMode('grid')}
+   536→   536→              className={`p-2.5 transition-colors ${viewMode === 'grid' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+   537→   537→            >
+   538→   538→              <Grid3X3 className="w-4 h-4" />
+   539→   539→            </button>
+   540→   540→            <button
+   541→   541→              onClick={() => setViewMode('list')}
+   542→   542→              className={`p-2.5 transition-colors ${viewMode === 'list' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+   543→   543→            >
+   544→   544→              <List className="w-4 h-4" />
+   545→   545→            </button>
+   546→   546→          </div>
+   547→   547→        </div>
+   548→   548→
+   549→   549→        <div className="flex gap-6 lg:gap-8">
+   550→   550→          {/* ── Desktop Sidebar (sticky, always visible, professional) ── */}
+   551→   551→          <aside id="sidebar-filtros" className="hidden lg:block w-[280px] xl:w-[300px] shrink-0">
+   552→   552→            <div
+   553→   553→              className="sticky top-[96px] bg-card border border-border/60 rounded-2xl shadow-sm shadow-black/[0.03] overflow-hidden"
+   554→   554→            >
+   555→   555→              <div className="p-5 max-h-[calc(100vh-112px)] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+   556→   556→                <CategorySidebar
+   557→   557→                  selectedCategory={selectedCategory}
+   558→   558→                  selectedSubcategory={selectedSubcategory}
+   559→   559→                  onCategoryClick={handleCategoryClick}
+   560→   560→                  onSubcategoryClick={handleSubcategoryClick}
+   561→   561→                  onClearAll={clearAll}
+   562→   562→                />
+   563→   563→              </div>
+   564→   564→            </div>
+   565→   565→          </aside>
+   566→   566→
+   567→   567→          {/* ── Mobile Filter Drawer (full-height, professional) ──── */}
+   568→   568→          <AnimatePresence>
+   569→   569→            {isFilterOpen && (
+   570→   570→              <>
+   571→   571→                <motion.div
+   572→   572→                  initial={{ opacity: 0 }}
+   573→   573→                  animate={{ opacity: 1 }}
+   574→   574→                  exit={{ opacity: 0 }}
+   575→   575→                  transition={{ duration: 0.2 }}
+   576→   576→                  className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+   577→   577→                  onClick={() => setIsFilterOpen(false)}
+   578→   578→                />
+   579→   579→                <motion.div
+   580→   580→                  initial={{ x: '-100%' }}
+   581→   581→                  animate={{ x: 0 }}
+   582→   582→                  exit={{ x: '-100%' }}
+   583→   583→                  transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+   584→   584→                  className="fixed top-0 left-0 bottom-0 z-50 w-[300px] max-w-[85vw] bg-white shadow-2xl lg:hidden flex flex-col"
+   585→   585→                >
+   586→   586→                  <CategorySidebar
+   587→   587→                    selectedCategory={selectedCategory}
+   588→   588→                    selectedSubcategory={selectedSubcategory}
+   589→   589→                    onCategoryClick={handleCategoryClick}
+   590→   590→                    onSubcategoryClick={handleSubcategoryClick}
+   591→   591→                    onClearAll={clearAll}
+   592→   592→                    isMobile
+   593→   593→                    onClose={() => setIsFilterOpen(false)}
+   594→   594→                  />
+   595→   595→                </motion.div>
+   596→   596→              </>
+   597→   597→            )}
+   598→   598→          </AnimatePresence>
+   599→   599→
+   600→   600→          {/* ── Product Grid ────────────────────────────────────── */}
+   601→   601→          <div id="productos-listado" className="flex-1 min-w-0">
+   602→   602→            {/* Active filter tags */}
+   603→   603→            {activeFiltersCount > 0 && (
+   604→   604→              <div className="flex flex-wrap gap-2 mb-4">
+   605→   605→                {selectedCategory && (
+   606→   606→                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
+   607→   607→                    {selectedCategory}
+   608→   608→                    <button onClick={() => { setSelectedCategory(''); setSelectedSubcategory(''); }}>
+   609→   609→                      <X className="w-3 h-3" />
+   610→   610→                    </button>
+   611→   611→                  </span>
+   612→   612→                )}
+   613→   613→                {selectedSubcategory && (
+   614→   614→                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary/10 text-secondary text-xs font-medium rounded-full">
+   615→   615→                    {selectedSubcategory}
+   616→   616→                    <button onClick={() => setSelectedSubcategory('')}>
+   617→   617→                      <X className="w-3 h-3" />
+   618→   618→                    </button>
+   619→   619→                  </span>
+   620→   620→                )}
+   621→   621→              </div>
+   622→   622→            )}
+   623→   623→
+   624→   624→            {filteredProducts.length > 0 ? (
+   625→   625→              <div
+   626→   626→                className={
+   627→   627→                  viewMode === 'grid'
+   628→   628→                    ? 'grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5'
+   629→   629→                    : 'space-y-4'
+   630→   630→                }
+   631→   631→              >
+   632→   632→                <AnimatePresence mode="wait">
+   633→   633→                  {filteredProducts.map((product, i) => (
+   634→   634→                    <ProductCard key={product.id} product={product} index={i} />
+   635→   635→                  ))}
+   636→   636→                </AnimatePresence>
+   637→   637→              </div>
+   638→   638→            ) : (
+   639→   639→              <motion.div
+   640→   640→                initial={{ opacity: 0 }}
+   641→   641→                animate={{ opacity: 1 }}
+   642→   642→                className="flex flex-col items-center justify-center py-20 text-center"
+   643→   643→              >
+   644→   644→                <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mb-4">
+   645→   645→                  <Package className="w-10 h-10 text-muted-foreground" />
+   646→   646→                </div>
+   647→   647→                <h3 className="text-lg font-bold text-foreground mb-2">Sin resultados</h3>
+   648→   648→                <p className="text-sm text-muted-foreground max-w-sm">
+   649→   649→                  No se encontraron productos con los filtros seleccionados. Prueba con otra categoría o
+   650→   650→                  subcategoría.
+   651→   651→                </p>
+   652→   652→                <button
+   653→   653→                  onClick={clearAll}
+   654→   654→                  className="mt-4 px-6 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-xl hover:bg-primary/90 transition-colors"
+   655→   655→                >
+   656→   656→                  Ver todos los productos
+   657→   657→                </button>
+   658→   658→              </motion.div>
+   659→   659→            )}
+   660→   660→          </div>
+   661→   661→        </div>
+   662→   662→      </div>
+   663→   663→    </div>
+   664→   664→  );
+   665→   665→}
+   666→   666→
+   667→   667→export default function ProductosPage() {
+   668→   668→  return (
+   669→   669→    <Suspense
+   670→   670→      fallback={
+   671→   671→        <div className="min-h-screen flex items-center justify-center">
+   672→   672→          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+   673→   673→        </div>
+   674→   674→      }
+   675→   675→    >
+   676→   676→      <ProductosContent />
+   677→   677→    </Suspense>
+   678→   678→  );
+   679→   679→}
+   680→   680→

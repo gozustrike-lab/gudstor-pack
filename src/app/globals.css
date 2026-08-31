@@ -1,0 +1,209 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-kraft: var(--kraft);
+  --color-kraft-dark: var(--kraft-dark);
+  --color-teal: var(--teal);
+  --color-teal-dark: var(--teal-dark);
+  --color-teal-light: var(--teal-light);
+  --color-logistic: var(--logistic);
+  --color-logistic-dark: var(--logistic-dark);
+  --color-logistic-light: var(--logistic-light);
+}
+
+:root {
+  --radius: 0.625rem;
+  /* Kraft Premium - Fondo beige sutil */
+  --kraft: oklch(0.90 0.02 80);
+  --kraft-dark: oklch(0.78 0.04 75);
+  --background: oklch(0.97 0.008 80);
+  --foreground: oklch(0.18 0.02 30);
+  /* Teal Corporativo - Color principal */
+  --teal: oklch(0.50 0.12 180);
+  --teal-dark: oklch(0.38 0.10 180);
+  --teal-light: oklch(0.92 0.04 180);
+  --primary: oklch(0.50 0.12 180);
+  --primary-foreground: oklch(0.98 0.005 180);
+  /* Verde Logístico - Color secundario */
+  --logistic: oklch(0.55 0.14 145);
+  --logistic-dark: oklch(0.42 0.12 145);
+  --logistic-light: oklch(0.93 0.04 145);
+  --secondary: oklch(0.55 0.14 145);
+  --secondary-foreground: oklch(0.98 0.005 145);
+  /* Semantic tokens */
+  --card: oklch(0.99 0.004 80);
+  --card-foreground: oklch(0.18 0.02 30);
+  --popover: oklch(0.99 0.004 80);
+  --popover-foreground: oklch(0.18 0.02 30);
+  --muted: oklch(0.94 0.01 80);
+  --muted-foreground: oklch(0.50 0.02 30);
+  --accent: oklch(0.92 0.04 180);
+  --accent-foreground: oklch(0.38 0.10 180);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.90 0.01 80);
+  --input: oklch(0.90 0.01 80);
+  --ring: oklch(0.50 0.12 180);
+  --chart-1: oklch(0.50 0.12 180);
+  --chart-2: oklch(0.55 0.14 145);
+  --chart-3: oklch(0.78 0.04 75);
+  --chart-4: oklch(0.65 0.10 60);
+  --chart-5: oklch(0.45 0.08 200);
+  --sidebar: oklch(0.97 0.008 80);
+  --sidebar-foreground: oklch(0.18 0.02 30);
+  --sidebar-primary: oklch(0.50 0.12 180);
+  --sidebar-primary-foreground: oklch(0.98 0.005 180);
+  --sidebar-accent: oklch(0.92 0.04 180);
+  --sidebar-accent-foreground: oklch(0.38 0.10 180);
+  --sidebar-border: oklch(0.90 0.01 80);
+  --sidebar-ring: oklch(0.50 0.12 180);
+}
+
+.dark {
+  --kraft: oklch(0.25 0.02 80);
+  --kraft-dark: oklch(0.18 0.02 75);
+  --background: oklch(0.16 0.01 30);
+  --foreground: oklch(0.92 0.01 80);
+  --teal: oklch(0.62 0.12 180);
+  --teal-dark: oklch(0.50 0.10 180);
+  --teal-light: oklch(0.25 0.03 180);
+  --primary: oklch(0.62 0.12 180);
+  --primary-foreground: oklch(0.16 0.01 180);
+  --logistic: oklch(0.65 0.14 145);
+  --logistic-dark: oklch(0.55 0.12 145);
+  --logistic-light: oklch(0.22 0.03 145);
+  --secondary: oklch(0.65 0.14 145);
+  --secondary-foreground: oklch(0.16 0.01 145);
+  --card: oklch(0.22 0.01 30);
+  --card-foreground: oklch(0.92 0.01 80);
+  --popover: oklch(0.22 0.01 30);
+  --popover-foreground: oklch(0.92 0.01 80);
+  --muted: oklch(0.28 0.015 30);
+  --muted-foreground: oklch(0.68 0.02 80);
+  --accent: oklch(0.25 0.03 180);
+  --accent-foreground: oklch(0.62 0.12 180);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(0.30 0.015 30);
+  --input: oklch(0.30 0.015 30);
+  --ring: oklch(0.62 0.12 180);
+  --chart-1: oklch(0.62 0.12 180);
+  --chart-2: oklch(0.65 0.14 145);
+  --chart-3: oklch(0.40 0.04 75);
+  --chart-4: oklch(0.55 0.10 60);
+  --chart-5: oklch(0.50 0.08 200);
+  --sidebar: oklch(0.22 0.01 30);
+  --sidebar-foreground: oklch(0.92 0.01 80);
+  --sidebar-primary: oklch(0.62 0.12 180);
+  --sidebar-primary-foreground: oklch(0.16 0.01 180);
+  --sidebar-accent: oklch(0.25 0.03 180);
+  --sidebar-accent-foreground: oklch(0.62 0.12 180);
+  --sidebar-border: oklch(0.30 0.015 30);
+  --sidebar-ring: oklch(0.62 0.12 180);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* Prevent overscroll bounce on iOS */
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Mobile: safe area padding for notch devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(0.70 0.02 80);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.55 0.04 180);
+}
+
+/* Prevent text selection on interactive mobile elements */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling for mobile */
+@media (max-width: 767px) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Prevent layout shift from scrollbar */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Override Tailwind v4 preflight for mobile logo — prevent max-width:100% crop */
+.mobile-logo-img {
+  max-width: none !important;
+  width: auto !important;
+  display: block;
+}
+
+/* Hide scrollbar for horizontal sliders */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -1,0 +1,697 @@
+{
+  "cajas-kraft-premium-20x15x10-cm": {
+    "productId": "cajas-kraft-premium",
+    "medida": "20x15x10 cm",
+    "medidaIndex": 0
+  },
+  "cajas-kraft-premium-30x20x15-cm": {
+    "productId": "cajas-kraft-premium",
+    "medida": "30x20x15 cm",
+    "medidaIndex": 1
+  },
+  "cajas-kraft-premium-40x30x20-cm": {
+    "productId": "cajas-kraft-premium",
+    "medida": "40x30x20 cm",
+    "medidaIndex": 2
+  },
+  "cajas-kraft-premium-50x40x30-cm": {
+    "productId": "cajas-kraft-premium",
+    "medida": "50x40x30 cm",
+    "medidaIndex": 3
+  },
+  "cajas-corrugadas-blancas-25x20x15-cm": {
+    "productId": "cajas-corrugadas-blancas",
+    "medida": "25x20x15 cm",
+    "medidaIndex": 0
+  },
+  "cajas-corrugadas-blancas-35x25x20-cm": {
+    "productId": "cajas-corrugadas-blancas",
+    "medida": "35x25x20 cm",
+    "medidaIndex": 1
+  },
+  "cajas-corrugadas-blancas-45x35x25-cm": {
+    "productId": "cajas-corrugadas-blancas",
+    "medida": "45x35x25 cm",
+    "medidaIndex": 2
+  },
+  "cajas-autoarmables-15x10x8-cm": {
+    "productId": "cajas-autoarmables",
+    "medida": "15x10x8 cm",
+    "medidaIndex": 0
+  },
+  "cajas-autoarmables-20x15x10-cm": {
+    "productId": "cajas-autoarmables",
+    "medida": "20x15x10 cm",
+    "medidaIndex": 1
+  },
+  "cajas-autoarmables-30x20x15-cm": {
+    "productId": "cajas-autoarmables",
+    "medida": "30x20x15 cm",
+    "medidaIndex": 2
+  },
+  "cajas-doble-pared-industrial-40x30x30-cm": {
+    "productId": "cajas-doble-pared-industrial",
+    "medida": "40x30x30 cm",
+    "medidaIndex": 0
+  },
+  "cajas-doble-pared-industrial-50x40x40-cm": {
+    "productId": "cajas-doble-pared-industrial",
+    "medida": "50x40x40 cm",
+    "medidaIndex": 1
+  },
+  "cajas-doble-pared-industrial-60x50x40-cm": {
+    "productId": "cajas-doble-pared-industrial",
+    "medida": "60x50x40 cm",
+    "medidaIndex": 2
+  },
+  "cajas-doble-pared-industrial-80x60x50-cm": {
+    "productId": "cajas-doble-pared-industrial",
+    "medida": "80x60x50 cm",
+    "medidaIndex": 3
+  },
+  "cajas-con-ventana-display-15x10x8-cm": {
+    "productId": "cajas-con-ventana-display",
+    "medida": "15x10x8 cm",
+    "medidaIndex": 0
+  },
+  "cajas-con-ventana-display-20x15x10-cm": {
+    "productId": "cajas-con-ventana-display",
+    "medida": "20x15x10 cm",
+    "medidaIndex": 1
+  },
+  "cajas-con-ventana-display-25x20x12-cm": {
+    "productId": "cajas-con-ventana-display",
+    "medida": "25x20x12 cm",
+    "medidaIndex": 2
+  },
+  "cajas-para-alimentos-grado-alimenticio-16x12x6-cm": {
+    "productId": "cajas-para-alimentos-grado-alimenticio",
+    "medida": "16x12x6 cm",
+    "medidaIndex": 0
+  },
+  "cajas-para-alimentos-grado-alimenticio-22x16x8-cm": {
+    "productId": "cajas-para-alimentos-grado-alimenticio",
+    "medida": "22x16x8 cm",
+    "medidaIndex": 1
+  },
+  "cajas-para-alimentos-grado-alimenticio-28x20x10-cm": {
+    "productId": "cajas-para-alimentos-grado-alimenticio",
+    "medida": "28x20x10 cm",
+    "medidaIndex": 2
+  },
+  "cajas-para-alimentos-grado-alimenticio-35x25x12-cm": {
+    "productId": "cajas-para-alimentos-grado-alimenticio",
+    "medida": "35x25x12 cm",
+    "medidaIndex": 3
+  },
+  "cajas-de-archivo-y-almacenamiento-35x27x25-cm": {
+    "productId": "cajas-de-archivo-y-almacenamiento",
+    "medida": "35x27x25 cm",
+    "medidaIndex": 0
+  },
+  "cajas-de-archivo-y-almacenamiento-40x30x30-cm": {
+    "productId": "cajas-de-archivo-y-almacenamiento",
+    "medida": "40x30x30 cm",
+    "medidaIndex": 1
+  },
+  "cajas-tubulares-para-posters-y-planos-5-cm-ø-x-45-cm": {
+    "productId": "cajas-tubulares-para-posters-y-planos",
+    "medida": "5 cm ø x 45 cm",
+    "medidaIndex": 0
+  },
+  "cajas-tubulares-para-posters-y-planos-8-cm-ø-x-60-cm": {
+    "productId": "cajas-tubulares-para-posters-y-planos",
+    "medida": "8 cm ø x 60 cm",
+    "medidaIndex": 1
+  },
+  "cajas-tubulares-para-posters-y-planos-10-cm-ø-x-90-cm": {
+    "productId": "cajas-tubulares-para-posters-y-planos",
+    "medida": "10 cm ø x 90 cm",
+    "medidaIndex": 2
+  },
+  "cajas-para-pizza-y-alimentos-calientes-25x25x5-cm": {
+    "productId": "cajas-para-pizza-y-alimentos-calientes",
+    "medida": "25x25x5 cm",
+    "medidaIndex": 0
+  },
+  "cajas-para-pizza-y-alimentos-calientes-30x30x5-cm": {
+    "productId": "cajas-para-pizza-y-alimentos-calientes",
+    "medida": "30x30x5 cm",
+    "medidaIndex": 1
+  },
+  "cajas-para-pizza-y-alimentos-calientes-35x35x7-cm": {
+    "productId": "cajas-para-pizza-y-alimentos-calientes",
+    "medida": "35x35x7 cm",
+    "medidaIndex": 2
+  },
+  "cajas-mini-para-ecommerce-10x8x5-cm": {
+    "productId": "cajas-mini-para-ecommerce",
+    "medida": "10x8x5 cm",
+    "medidaIndex": 0
+  },
+  "cajas-mini-para-ecommerce-15x10x8-cm": {
+    "productId": "cajas-mini-para-ecommerce",
+    "medida": "15x10x8 cm",
+    "medidaIndex": 1
+  },
+  "cajas-mini-para-ecommerce-18x12x6-cm": {
+    "productId": "cajas-mini-para-ecommerce",
+    "medida": "18x12x6 cm",
+    "medidaIndex": 2
+  },
+  "cajas-triple-pared-exportacion-50x40x40-cm": {
+    "productId": "cajas-triple-pared-exportacion",
+    "medida": "50x40x40 cm",
+    "medidaIndex": 0
+  },
+  "cajas-triple-pared-exportacion-60x50x50-cm": {
+    "productId": "cajas-triple-pared-exportacion",
+    "medida": "60x50x50 cm",
+    "medidaIndex": 1
+  },
+  "cajas-triple-pared-exportacion-80x60x50-cm": {
+    "productId": "cajas-triple-pared-exportacion",
+    "medida": "80x60x50 cm",
+    "medidaIndex": 2
+  },
+  "cajas-con-separadores-para-botellas-6-botellas-(30x25x20-cm)": {
+    "productId": "cajas-con-separadores-para-botellas",
+    "medida": "6 botellas (30x25x20 cm)",
+    "medidaIndex": 0
+  },
+  "cajas-con-separadores-para-botellas-12-botellas-(35x28x20-cm)": {
+    "productId": "cajas-con-separadores-para-botellas",
+    "medida": "12 botellas (35x28x20 cm)",
+    "medidaIndex": 1
+  },
+  "film-estirable-industrial-50-cm-x-300-m": {
+    "productId": "film-estirable-industrial",
+    "medida": "50 cm x 300 m",
+    "medidaIndex": 0
+  },
+  "film-estirable-industrial-75-cm-x-300-m": {
+    "productId": "film-estirable-industrial",
+    "medida": "75 cm x 300 m",
+    "medidaIndex": 1
+  },
+  "film-termoencogible-50-cm-x-300-m": {
+    "productId": "film-termoencogible",
+    "medida": "50 cm x 300 m",
+    "medidaIndex": 0
+  },
+  "film-termoencogible-70-cm-x-300-m": {
+    "productId": "film-termoencogible",
+    "medida": "70 cm x 300 m",
+    "medidaIndex": 1
+  },
+  "film-antiestatico-para-electronica-40-cm-x-200-m": {
+    "productId": "film-antiestatico-para-electronica",
+    "medida": "40 cm x 200 m",
+    "medidaIndex": 0
+  },
+  "film-antiestatico-para-electronica-60-cm-x-200-m": {
+    "productId": "film-antiestatico-para-electronica",
+    "medida": "60 cm x 200 m",
+    "medidaIndex": 1
+  },
+  "film-de-paletizado-manual-45-cm-x-300-m": {
+    "productId": "film-de-paletizado-manual",
+    "medida": "45 cm x 300 m",
+    "medidaIndex": 0
+  },
+  "film-de-paletizado-manual-50-cm-x-300-m": {
+    "productId": "film-de-paletizado-manual",
+    "medida": "50 cm x 300 m",
+    "medidaIndex": 1
+  },
+  "film-alimentario-certificado-30-cm-x-300-m": {
+    "productId": "film-alimentario-certificado",
+    "medida": "30 cm x 300 m",
+    "medidaIndex": 0
+  },
+  "film-alimentario-certificado-45-cm-x-300-m": {
+    "productId": "film-alimentario-certificado",
+    "medida": "45 cm x 300 m",
+    "medidaIndex": 1
+  },
+  "film-estirable-colores-50-cm-x-300-m": {
+    "productId": "film-estirable-colores",
+    "medida": "50 cm x 300 m",
+    "medidaIndex": 0
+  },
+  "film-estirable-colores-75-cm-x-300-m": {
+    "productId": "film-estirable-colores",
+    "medida": "75 cm x 300 m",
+    "medidaIndex": 1
+  },
+  "film-microperforado-frescos-50-cm-x-300-m": {
+    "productId": "film-microperforado-frescos",
+    "medida": "50 cm x 300 m",
+    "medidaIndex": 0
+  },
+  "film-microperforado-frescos-60-cm-x-300-m": {
+    "productId": "film-microperforado-frescos",
+    "medida": "60 cm x 300 m",
+    "medidaIndex": 1
+  },
+  "film-para-maquina-enfardadora-50-cm-x-1800-m": {
+    "productId": "film-para-maquina-enfardadora",
+    "medida": "50 cm x 1800 m",
+    "medidaIndex": 0
+  },
+  "film-para-maquina-enfardadora-75-cm-x-1500-m": {
+    "productId": "film-para-maquina-enfardadora",
+    "medida": "75 cm x 1500 m",
+    "medidaIndex": 1
+  },
+  "cinta-adhesiva-de-empaque-48-mm-x-100-m": {
+    "productId": "cinta-adhesiva-de-empaque",
+    "medida": "48 mm x 100 m",
+    "medidaIndex": 0
+  },
+  "cinta-adhesiva-de-empaque-72-mm-x-100-m": {
+    "productId": "cinta-adhesiva-de-empaque",
+    "medida": "72 mm x 100 m",
+    "medidaIndex": 1
+  },
+  "cinta-de-enmascarar-profesional-25-mm-x-50-m": {
+    "productId": "cinta-de-enmascarar-profesional",
+    "medida": "25 mm x 50 m",
+    "medidaIndex": 0
+  },
+  "cinta-de-enmascarar-profesional-50-mm-x-50-m": {
+    "productId": "cinta-de-enmascarar-profesional",
+    "medida": "50 mm x 50 m",
+    "medidaIndex": 1
+  },
+  "cinta-de-embalaje-industrial-48-mm-x-200-m": {
+    "productId": "cinta-de-embalaje-industrial",
+    "medida": "48 mm x 200 m",
+    "medidaIndex": 0
+  },
+  "cinta-de-embalaje-industrial-72-mm-x-200-m": {
+    "productId": "cinta-de-embalaje-industrial",
+    "medida": "72 mm x 200 m",
+    "medidaIndex": 1
+  },
+  "cinta-adhesiva-doble-cara-12-mm-x-50-m": {
+    "productId": "cinta-adhesiva-doble-cara",
+    "medida": "12 mm x 50 m",
+    "medidaIndex": 0
+  },
+  "cinta-adhesiva-doble-cara-19-mm-x-50-m": {
+    "productId": "cinta-adhesiva-doble-cara",
+    "medida": "19 mm x 50 m",
+    "medidaIndex": 1
+  },
+  "cinta-adhesiva-doble-cara-25-mm-x-50-m": {
+    "productId": "cinta-adhesiva-doble-cara",
+    "medida": "25 mm x 50 m",
+    "medidaIndex": 2
+  },
+  "cinta-de-papel-kraft-adhesiva-48-mm-x-100-m": {
+    "productId": "cinta-de-papel-kraft-adhesiva",
+    "medida": "48 mm x 100 m",
+    "medidaIndex": 0
+  },
+  "cinta-de-papel-kraft-adhesiva-72-mm-x-100-m": {
+    "productId": "cinta-de-papel-kraft-adhesiva",
+    "medida": "72 mm x 100 m",
+    "medidaIndex": 1
+  },
+  "cinta-impresa-personalizada-48-mm-x-100-m": {
+    "productId": "cinta-impresa-personalizada",
+    "medida": "48 mm x 100 m",
+    "medidaIndex": 0
+  },
+  "cinta-impresa-personalizada-72-mm-x-100-m": {
+    "productId": "cinta-impresa-personalizada",
+    "medida": "72 mm x 100 m",
+    "medidaIndex": 1
+  },
+  "cinta-de-seguridad-anti-manipulacion-48-mm-x-100-m": {
+    "productId": "cinta-de-seguridad-anti-manipulacion",
+    "medida": "48 mm x 100 m",
+    "medidaIndex": 0
+  },
+  "cinta-de-seguridad-anti-manipulacion-72-mm-x-100-m": {
+    "productId": "cinta-de-seguridad-anti-manipulacion",
+    "medida": "72 mm x 100 m",
+    "medidaIndex": 1
+  },
+  "cinta-de-cierre-velcro-industrial-20-mm-x-25-m": {
+    "productId": "cinta-de-cierre-velcro-industrial",
+    "medida": "20 mm x 25 m",
+    "medidaIndex": 0
+  },
+  "cinta-de-cierre-velcro-industrial-25-mm-x-25-m": {
+    "productId": "cinta-de-cierre-velcro-industrial",
+    "medida": "25 mm x 25 m",
+    "medidaIndex": 1
+  },
+  "cinta-de-cierre-velcro-industrial-50-mm-x-25-m": {
+    "productId": "cinta-de-cierre-velcro-industrial",
+    "medida": "50 mm x 25 m",
+    "medidaIndex": 2
+  },
+  "cinta-de-polipropileno-colores-48-mm-x-100-m": {
+    "productId": "cinta-de-polipropileno-colores",
+    "medida": "48 mm x 100 m",
+    "medidaIndex": 0
+  },
+  "cinta-reforzada-con-filamentos-48-mm-x-100-m": {
+    "productId": "cinta-reforzada-con-filamentos",
+    "medida": "48 mm x 100 m",
+    "medidaIndex": 0
+  },
+  "cinta-reforzada-con-filamentos-72-mm-x-100-m": {
+    "productId": "cinta-reforzada-con-filamentos",
+    "medida": "72 mm x 100 m",
+    "medidaIndex": 1
+  },
+  "plastico-burbuja-protector-1.2-m-x-100-m": {
+    "productId": "plastico-burbuja-protector",
+    "medida": "1.2 m x 100 m",
+    "medidaIndex": 0
+  },
+  "plastico-burbuja-protector-1.5-m-x-100-m": {
+    "productId": "plastico-burbuja-protector",
+    "medida": "1.5 m x 100 m",
+    "medidaIndex": 1
+  },
+  "planchas-de-espuma-poliestireno-50x100x2-cm": {
+    "productId": "planchas-de-espuma-poliestireno",
+    "medida": "50x100x2 cm",
+    "medidaIndex": 0
+  },
+  "planchas-de-espuma-poliestireno-100x100x3-cm": {
+    "productId": "planchas-de-espuma-poliestireno",
+    "medida": "100x100x3 cm",
+    "medidaIndex": 1
+  },
+  "planchas-de-espuma-poliestireno-100x200x5-cm": {
+    "productId": "planchas-de-espuma-poliestireno",
+    "medida": "100x200x5 cm",
+    "medidaIndex": 2
+  },
+  "papel-de-empaque-kraft-50-cm-x-100-m": {
+    "productId": "papel-de-empaque-kraft",
+    "medida": "50 cm x 100 m",
+    "medidaIndex": 0
+  },
+  "papel-de-empaque-kraft-75-cm-x-100-m": {
+    "productId": "papel-de-empaque-kraft",
+    "medida": "75 cm x 100 m",
+    "medidaIndex": 1
+  },
+  "papel-de-empaque-kraft-100-cm-x-100-m": {
+    "productId": "papel-de-empaque-kraft",
+    "medida": "100 cm x 100 m",
+    "medidaIndex": 2
+  },
+  "plastico-de-burro-camisa-120x150-cm": {
+    "productId": "plastico-de-burro-camisa",
+    "medida": "120x150 cm",
+    "medidaIndex": 0
+  },
+  "plastico-de-burro-camisa-150x200-cm": {
+    "productId": "plastico-de-burro-camisa",
+    "medida": "150x200 cm",
+    "medidaIndex": 1
+  },
+  "plastico-de-burro-camisa-200x250-cm": {
+    "productId": "plastico-de-burro-camisa",
+    "medida": "200x250 cm",
+    "medidaIndex": 2
+  },
+  "relleno-de-papel-picado-ecologico-5-kg-caja": {
+    "productId": "relleno-de-papel-picado-ecologico",
+    "medida": "5 kg caja",
+    "medidaIndex": 0
+  },
+  "relleno-de-papel-picado-ecologico-10-kg-caja": {
+    "productId": "relleno-de-papel-picado-ecologico",
+    "medida": "10 kg caja",
+    "medidaIndex": 1
+  },
+  "relleno-de-papel-picado-ecologico-20-kg-caja": {
+    "productId": "relleno-de-papel-picado-ecologico",
+    "medida": "20 kg caja",
+    "medidaIndex": 2
+  },
+  "esponja-de-empaque-poliuretano-100x50x1-cm": {
+    "productId": "esponja-de-empaque-poliuretano",
+    "medida": "100x50x1 cm",
+    "medidaIndex": 0
+  },
+  "esponja-de-empaque-poliuretano-100x100x2-cm": {
+    "productId": "esponja-de-empaque-poliuretano",
+    "medida": "100x100x2 cm",
+    "medidaIndex": 1
+  },
+  "esponja-de-empaque-poliuretano-200x100x3-cm": {
+    "productId": "esponja-de-empaque-poliuretano",
+    "medida": "200x100x3 cm",
+    "medidaIndex": 2
+  },
+  "film-de-burbuja-jumbo-industrial-1.5-m-x-100-m": {
+    "productId": "film-de-burbuja-jumbo-industrial",
+    "medida": "1.5 m x 100 m",
+    "medidaIndex": 0
+  },
+  "film-de-burbuja-jumbo-industrial-2.0-m-x-100-m": {
+    "productId": "film-de-burbuja-jumbo-industrial",
+    "medida": "2.0 m x 100 m",
+    "medidaIndex": 1
+  },
+  "protectores-de-esquinas-de-carton-100x100x3-mm": {
+    "productId": "protectores-de-esquinas-de-carton",
+    "medida": "100x100x3 mm",
+    "medidaIndex": 0
+  },
+  "protectores-de-esquinas-de-carton-150x150x5-mm": {
+    "productId": "protectores-de-esquinas-de-carton",
+    "medida": "150x150x5 mm",
+    "medidaIndex": 1
+  },
+  "protectores-de-esquinas-de-carton-200x200x5-mm": {
+    "productId": "protectores-de-esquinas-de-carton",
+    "medida": "200x200x5 mm",
+    "medidaIndex": 2
+  },
+  "bolsas-de-envio-courier-25x35-cm": {
+    "productId": "bolsas-de-envio-courier",
+    "medida": "25x35 cm",
+    "medidaIndex": 0
+  },
+  "bolsas-de-envio-courier-30x40-cm": {
+    "productId": "bolsas-de-envio-courier",
+    "medida": "30x40 cm",
+    "medidaIndex": 1
+  },
+  "bolsas-de-envio-courier-35x50-cm": {
+    "productId": "bolsas-de-envio-courier",
+    "medida": "35x50 cm",
+    "medidaIndex": 2
+  },
+  "bolsas-de-envio-courier-40x60-cm": {
+    "productId": "bolsas-de-envio-courier",
+    "medida": "40x60 cm",
+    "medidaIndex": 3
+  },
+  "bolsas-kraft-de-papel-20x22x8-cm": {
+    "productId": "bolsas-kraft-de-papel",
+    "medida": "20x22x8 cm",
+    "medidaIndex": 0
+  },
+  "bolsas-kraft-de-papel-28x32x10-cm": {
+    "productId": "bolsas-kraft-de-papel",
+    "medida": "28x32x10 cm",
+    "medidaIndex": 1
+  },
+  "bolsas-kraft-de-papel-35x40x12-cm": {
+    "productId": "bolsas-kraft-de-papel",
+    "medida": "35x40x12 cm",
+    "medidaIndex": 2
+  },
+  "bolsas-kraft-de-papel-42x48x14-cm": {
+    "productId": "bolsas-kraft-de-papel",
+    "medida": "42x48x14 cm",
+    "medidaIndex": 3
+  },
+  "bolsas-con-asa-troquelada-22x30-cm": {
+    "productId": "bolsas-con-asa-troquelada",
+    "medida": "22x30 cm",
+    "medidaIndex": 0
+  },
+  "bolsas-con-asa-troquelada-30x40-cm": {
+    "productId": "bolsas-con-asa-troquelada",
+    "medida": "30x40 cm",
+    "medidaIndex": 1
+  },
+  "bolsas-con-asa-troquelada-38x50-cm": {
+    "productId": "bolsas-con-asa-troquelada",
+    "medida": "38x50 cm",
+    "medidaIndex": 2
+  },
+  "bolsas-de-almacenamiento-zip-lock-8x12-cm": {
+    "productId": "bolsas-de-almacenamiento-zip-lock",
+    "medida": "8x12 cm",
+    "medidaIndex": 0
+  },
+  "bolsas-de-almacenamiento-zip-lock-12x17-cm": {
+    "productId": "bolsas-de-almacenamiento-zip-lock",
+    "medida": "12x17 cm",
+    "medidaIndex": 1
+  },
+  "bolsas-de-almacenamiento-zip-lock-18x24-cm": {
+    "productId": "bolsas-de-almacenamiento-zip-lock",
+    "medida": "18x24 cm",
+    "medidaIndex": 2
+  },
+  "bolsas-de-almacenamiento-zip-lock-25x35-cm": {
+    "productId": "bolsas-de-almacenamiento-zip-lock",
+    "medida": "25x35 cm",
+    "medidaIndex": 3
+  },
+  "bolsas-de-basura-resistentes-60x80-cm-(20l)": {
+    "productId": "bolsas-de-basura-resistentes",
+    "medida": "60x80 cm (20L)",
+    "medidaIndex": 0
+  },
+  "bolsas-de-basura-resistentes-80x110-cm-(50l)": {
+    "productId": "bolsas-de-basura-resistentes",
+    "medida": "80x110 cm (50L)",
+    "medidaIndex": 1
+  },
+  "bolsas-de-basura-resistentes-100x130-cm-(100l)": {
+    "productId": "bolsas-de-basura-resistentes",
+    "medida": "100x130 cm (100L)",
+    "medidaIndex": 2
+  },
+  "bolsas-de-tela-no-tejida-25x30-cm": {
+    "productId": "bolsas-de-tela-no-tejida",
+    "medida": "25x30 cm",
+    "medidaIndex": 0
+  },
+  "bolsas-de-tela-no-tejida-30x38-cm": {
+    "productId": "bolsas-de-tela-no-tejida",
+    "medida": "30x38 cm",
+    "medidaIndex": 1
+  },
+  "bolsas-de-tela-no-tejida-38x42-cm": {
+    "productId": "bolsas-de-tela-no-tejida",
+    "medida": "38x42 cm",
+    "medidaIndex": 2
+  },
+  "bolsas-para-alimentos-y-freezer-15x22-cm": {
+    "productId": "bolsas-para-alimentos-y-freezer",
+    "medida": "15x22 cm",
+    "medidaIndex": 0
+  },
+  "bolsas-para-alimentos-y-freezer-20x30-cm": {
+    "productId": "bolsas-para-alimentos-y-freezer",
+    "medida": "20x30 cm",
+    "medidaIndex": 1
+  },
+  "bolsas-para-alimentos-y-freezer-25x35-cm": {
+    "productId": "bolsas-para-alimentos-y-freezer",
+    "medida": "25x35 cm",
+    "medidaIndex": 2
+  },
+  "bolsas-para-alimentos-y-freezer-30x40-cm": {
+    "productId": "bolsas-para-alimentos-y-freezer",
+    "medida": "30x40 cm",
+    "medidaIndex": 3
+  },
+  "bolsas-autoadhesivas-courier-pequenas-12x18-cm": {
+    "productId": "bolsas-autoadhesivas-courier-pequenas",
+    "medida": "12x18 cm",
+    "medidaIndex": 0
+  },
+  "bolsas-autoadhesivas-courier-pequenas-15x22-cm": {
+    "productId": "bolsas-autoadhesivas-courier-pequenas",
+    "medida": "15x22 cm",
+    "medidaIndex": 1
+  },
+  "bolsas-autoadhesivas-courier-pequenas-18x26-cm": {
+    "productId": "bolsas-autoadhesivas-courier-pequenas",
+    "medida": "18x26 cm",
+    "medidaIndex": 2
+  },
+  "bolsas-autoadhesivas-courier-pequenas-20x30-cm": {
+    "productId": "bolsas-autoadhesivas-courier-pequenas",
+    "medida": "20x30 cm",
+    "medidaIndex": 3
+  },
+  "bolsas-de-polietileno-gruesas-30x40-cm": {
+    "productId": "bolsas-de-polietileno-gruesas",
+    "medida": "30x40 cm",
+    "medidaIndex": 0
+  },
+  "bolsas-de-polietileno-gruesas-40x55-cm": {
+    "productId": "bolsas-de-polietileno-gruesas",
+    "medida": "40x55 cm",
+    "medidaIndex": 1
+  },
+  "bolsas-de-polietileno-gruesas-50x70-cm": {
+    "productId": "bolsas-de-polietileno-gruesas",
+    "medida": "50x70 cm",
+    "medidaIndex": 2
+  },
+  "bolsas-de-polietileno-gruesas-60x90-cm": {
+    "productId": "bolsas-de-polietileno-gruesas",
+    "medida": "60x90 cm",
+    "medidaIndex": 3
+  },
+  "bolsas-kraft-con-ventana-12x18-cm": {
+    "productId": "bolsas-kraft-con-ventana",
+    "medida": "12x18 cm",
+    "medidaIndex": 0
+  },
+  "bolsas-kraft-con-ventana-16x22-cm": {
+    "productId": "bolsas-kraft-con-ventana",
+    "medida": "16x22 cm",
+    "medidaIndex": 1
+  },
+  "bolsas-kraft-con-ventana-20x28-cm": {
+    "productId": "bolsas-kraft-con-ventana",
+    "medida": "20x28 cm",
+    "medidaIndex": 2
+  },
+  "bolsas-kraft-con-ventana-25x35-cm": {
+    "productId": "bolsas-kraft-con-ventana",
+    "medida": "25x35 cm",
+    "medidaIndex": 3
+  },
+  "bolsas-de-regalo-craft-18x22-cm": {
+    "productId": "bolsas-de-regalo-craft",
+    "medida": "18x22 cm",
+    "medidaIndex": 0
+  },
+  "bolsas-de-regalo-craft-22x28-cm": {
+    "productId": "bolsas-de-regalo-craft",
+    "medida": "22x28 cm",
+    "medidaIndex": 1
+  },
+  "bolsas-de-regalo-craft-28x35-cm": {
+    "productId": "bolsas-de-regalo-craft",
+    "medida": "28x35 cm",
+    "medidaIndex": 2
+  },
+  "bolsas-compostables-biodegradables-20x30-cm": {
+    "productId": "bolsas-compostables-biodegradables",
+    "medida": "20x30 cm",
+    "medidaIndex": 0
+  },
+  "bolsas-compostables-biodegradables-30x40-cm": {
+    "productId": "bolsas-compostables-biodegradables",
+    "medida": "30x40 cm",
+    "medidaIndex": 1
+  },
+  "bolsas-compostables-biodegradables-40x55-cm": {
+    "productId": "bolsas-compostables-biodegradables",
+    "medida": "40x55 cm",
+    "medidaIndex": 2
+  }
+}

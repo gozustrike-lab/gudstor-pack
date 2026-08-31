@@ -1,0 +1,1232 @@
+     1→'use client';
+     2→
+     3→import { useState, use, useCallback, useEffect, useRef } from 'react';
+     4→import Link from 'next/link';
+     5→import { useSearchParams } from 'next/navigation';
+     6→import { motion, AnimatePresence } from 'framer-motion';
+     7→import {
+     8→  Package,
+     9→  ShoppingCart,
+    10→  ArrowLeft,
+    11→  Truck,
+    12→  Shield,
+    13→  Check,
+    14→  Heart,
+    15→  MessageCircle,
+    16→  ChevronRight,
+    17→  Phone,
+    18→  Box,
+    19→  Layers,
+    20→  Ruler,
+    21→  CircleDot,
+    22→  ShoppingBag,
+    23→  LayoutGrid,
+    24→  ChevronLeft,
+    25→  ZoomIn,
+    26→  ZoomOut,
+    27→  X,
+    28→  ChevronDown,
+    29→  ChevronUp,
+    30→} from 'lucide-react';
+    31→import { useCartStore } from '@/lib/cart-store';
+    32→import { useFavoritesStore } from '@/lib/favorites-store';
+    33→import { formatPrice } from '@/lib/utils';
+    34→import { COMPANY, buildProductMessage } from '@/config/company';
+    35→import LightboxGallery from '@/components/lightbox-gallery';
+    36→import products from '@/data/products.json';
+    37→
+    38→const visibleProducts = products;
+    39→
+    40→type TabKey = 'descripcion' | 'especificaciones' | 'envios' | 'faq';
+    41→
+    42→// ─── Related Products Carousel (Auto-Scroll) ────────────────────────────
+    43→function RelatedProductsCarousel({ products: rpList }: { products: typeof visibleProducts }) {
+    44→  const trackRef = useRef<HTMLDivElement>(null);
+    45→  const [isPaused, setIsPaused] = useState(false);
+    46→  const [direction, setDirection] = useState<'left' | 'right'>('right');
+    47→  const animFrameRef = useRef<number>(0);
+    48→  const posRef = useRef(0);
+    49→  const speedRef = useRef(0.5); // px per frame (~30px/sec at 60fps)
+    50→
+    51→  // Duplicate list for seamless infinite loop
+    52→  const items = [...rpList, ...rpList];
+    53→
+    54→  // Auto-scroll animation loop
+    55→  useEffect(() => {
+    56→    if (isPaused) {
+    57→      cancelAnimationFrame(animFrameRef.current);
+    58→      return;
+    59→    }
+    60→    const step = () => {
+    61→      const el = trackRef.current;
+    62→      if (!el) return;
+    63→      const halfWidth = el.scrollWidth / 2;
+    64→      if (direction === 'right') {
+    65→        posRef.current += speedRef.current;
+    66→        if (posRef.current >= halfWidth) posRef.current -= halfWidth;
+    67→      } else {
+    68→        posRef.current -= speedRef.current;
+    69→        if (posRef.current <= 0) posRef.current += halfWidth;
+    70→      }
+    71→      el.style.transform = `translateX(-${posRef.current}px)`;
+    72→      animFrameRef.current = requestAnimationFrame(step);
+    73→    };
+    74→    animFrameRef.current = requestAnimationFrame(step);
+    75→    return () => cancelAnimationFrame(animFrameRef.current);
+    76→  }, [isPaused, direction]);
+    77→
+    78→  // Desktop: pause on hover
+    79→  const handleMouseEnter = useCallback(() => setIsPaused(true), []);
+    80→  const handleMouseLeave = useCallback(() => setIsPaused(false), []);
+    81→
+    82→  // Mobile: pause on touch, resume after delay
+    83→  const handleTouchStart = useCallback(() => setIsPaused(true), []);
+    84→  const handleTouchEnd = useCallback(() => {
+    85→    setTimeout(() => setIsPaused(false), 2000);
+    86→  }, []);
+    87→
+    88→  // Direction controls
+    89→  const scrollDir = useCallback((dir: 'left' | 'right') => {
+    90→    setDirection(dir);
+    91→    setIsPaused(false);
+    92→  }, []);
+    93→
+    94→  const toggleDirection = useCallback(() => {
+    95→    setDirection(prev => prev === 'right' ? 'left' : 'right');
+    96→    setIsPaused(false);
+    97→  }, []);
+    98→
+    99→  if (rpList.length === 0) return null;
+   100→
+   101→  return (
+   102→    <section className="mt-8 sm:mt-12 pt-6 border-t border-border/50">
+   103→      <div className="flex items-center justify-between mb-3 sm:mb-4">
+   104→        <h2 className="text-base sm:text-lg font-bold text-foreground">Productos Relacionados</h2>
+   105→        <div className="flex items-center gap-1.5">
+   106→          {/* Left button */}
+   107→          <button
+   108→            onClick={() => scrollDir('left')}
+   109→            className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all ${
+   110→              direction === 'left'
+   111→                ? 'border-primary bg-primary/10 text-primary'
+   112→                : 'border-border/50 bg-white hover:bg-muted/50 text-foreground/70'
+   113→            }`}
+   114→            aria-label="Mover a la izquierda"
+   115→          >
+   116→            <ChevronLeft className="w-4 h-4" />
+   117→          </button>
+   118→          {/* Toggle auto-scroll direction */}
+   119→          <button
+   120→            onClick={toggleDirection}
+   121→            className="px-2.5 h-8 flex items-center justify-center rounded-full border border-border/50 bg-white hover:bg-muted/50 transition-all"
+   122→            aria-label="Cambiar dirección"
+   123→            title={isPaused ? 'Reanudar' : `Auto-scroll: ${direction === 'right' ? '→' : '←'}`}
+   124→          >
+   125→            <span className={`transition-transform duration-300 inline-block ${direction === 'left' ? 'rotate-180' : ''}`}>
+   126→              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+   127→            </span>
+   128→          </button>
+   129→          {/* Right button */}
+   130→          <button
+   131→            onClick={() => scrollDir('right')}
+   132→            className={`w-8 h-8 flex items-center justify-center rounded-full border transition-all ${
+   133→              direction === 'right'
+   134→                ? 'border-primary bg-primary/10 text-primary'
+   135→                : 'border-border/50 bg-white hover:bg-muted/50 text-foreground/70'
+   136→            }`}
+   137→            aria-label="Mover a la derecha"
+   138→          >
+   139→            <ChevronRight className="w-4 h-4" />
+   140→          </button>
+   141→          {/* Pause indicator dot */}
+   142→          <span className={`w-1.5 h-1.5 rounded-full transition-colors ml-0.5 ${isPaused ? 'bg-amber-400' : 'bg-green-400'}`} title={isPaused ? 'Pausado' : 'En movimiento'} />
+   143→        </div>
+   144→      </div>
+   145→
+   146→      {/* Carousel viewport */}
+   147→      <div
+   148→        className="overflow-hidden"
+   149→        onMouseEnter={handleMouseEnter}
+   150→        onMouseLeave={handleMouseLeave}
+   151→        onTouchStart={handleTouchStart}
+   152→        onTouchEnd={handleTouchEnd}
+   153→      >
+   154→        <div
+   155→          ref={trackRef}
+   156→          className="flex gap-3 w-max will-change-transform"
+   157→        >
+   158→          {items.map((rp, idx) => (
+   159→            <Link
+   160→              key={`${rp.id}-${idx}`}
+   161→              href={`/productos/${rp.slug || rp.id}`}
+   162→              className="shrink-0 w-[160px] sm:w-[200px]"
+   163→              onClick={() => setIsPaused(true)}
+   164→            >
+   165→              <motion.div
+   166→                initial={{ opacity: 0, y: 15 }}
+   167→                whileInView={{ opacity: 1, y: 0 }}
+   168→                viewport={{ once: true }}
+   169→                className="group bg-card border border-border/50 rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-md transition-shadow"
+   170→              >
+   171→                <div data-rp-card className="aspect-[4/3] bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+   172→                  <Package className="w-8 h-8 sm:w-10 sm:h-10 text-primary/30" />
+   173→                </div>
+   174→                <div className="p-2.5 sm:p-3">
+   175→                  <h3 className="text-[11px] sm:text-xs font-bold text-foreground group-hover:text-primary truncate">{rp.nombre}</h3>
+   176→                  <p className="text-sm sm:text-lg font-extrabold text-primary mt-0.5 sm:mt-1">
+   177→                    {formatPrice(rp.packs[0].precio / rp.packs[0].cantidad)}/u
+   178→                  </p>
+   179→                </div>
+   180→              </motion.div>
+   181→            </Link>
+   182→          ))}
+   183→        </div>
+   184→      </div>
+   185→    </section>
+   186→  );
+   187→}
+   188→
+   189→export default function ProductoDetalleClient({
+   190→  params,
+   191→}: {
+   192→  params: Promise<{ id: string }>;
+   193→}) {
+   194→  const { id } = use(params);
+   195→  const searchParams = useSearchParams();
+   196→  const [quantity, setQuantity] = useState(1);
+   197→  const [selectedMedida, setSelectedMedida] = useState('');
+   198→  const [selectedColor, setSelectedColor] = useState('');
+   199→  const [selectedPackIndex, setSelectedPackIndex] = useState(0);
+   200→  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+   201→  const [addedToCart, setAddedToCart] = useState(false);
+   202→  const [heartActive, setHeartActive] = useState(false);
+   203→  const [activeTab, setActiveTab] = useState<TabKey>('descripcion');
+   204→  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+   205→  const [isZoomed, setIsZoomed] = useState(false);
+   206→  const [descExpanded, setDescExpanded] = useState(false);
+   207→  const [faqOpen, setFaqOpen] = useState<Record<number, boolean>>({});
+   208→  const isFirstRender = useRef(true);
+   209→
+   210→  const addItem = useCartStore((s) => s.addItem);
+   211→  const isFavorite = useFavoritesStore((s) => s.isFavorite(id));
+   212→  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+   213→
+   214→  const product = visibleProducts.find((p) => p.id === id || p.slug === id);
+   215→
+   216→  // ── Deep linking: read pack + medida from URL on mount ──
+   217→  useEffect(() => {
+   218→    if (!product) return;
+   219→    const packParam = searchParams.get('pack');
+   220→    const medidaParam = searchParams.get('medida');
+   221→    if (packParam) {
+   222→      const idx = product.packs.findIndex((p) => String(p.cantidad) === packParam);
+   223→      if (idx >= 0) setSelectedPackIndex(idx);
+   224→    }
+   225→    if (medidaParam) {
+   226→      const decoded = decodeURIComponent(medidaParam);
+   227→      if (product.medidas.includes(decoded)) {
+   228→        setSelectedMedida(decoded);
+   229→      }
+   230→    }
+   231→  }, [product, searchParams]);
+   232→
+   233→  // ── Sync pack + medida → URL query params ──
+   234→  useEffect(() => {
+   235→    if (!product || isFirstRender.current) {
+   236→      if (isFirstRender.current) isFirstRender.current = false;
+   237→      return;
+   238→    }
+   239→    if (typeof window === 'undefined') return;
+   240→    const urlParams = new URLSearchParams();
+   241→    const pack = product.packs[selectedPackIndex];
+   242→    if (pack) urlParams.set('pack', String(pack.cantidad));
+   243→    const medida = selectedMedida || product.medidas[0];
+   244→    urlParams.set('medida', encodeURIComponent(medida));
+   245→    const qs = urlParams.toString();
+   246→    window.history.replaceState(null, '', `/productos/${id}?${qs}`);
+   247→  }, [product, id, selectedPackIndex, selectedMedida]);
+   248→
+   249→  const selectedPack = product?.packs[selectedPackIndex] ?? null;
+   250→
+   251→  const handleAddToCart = useCallback(() => {
+   252→    if (!product || !selectedPack) return;
+   253→    addItem(
+   254→      product,
+   255→      quantity,
+   256→      selectedMedida || product.medidas[0],
+   257→      selectedColor || product.colores[0],
+   258→      selectedPack.cantidad
+   259→    );
+   260→    setAddedToCart(true);
+   261→    setTimeout(() => setAddedToCart(false), 2000);
+   262→  }, [product, selectedPack, quantity, selectedMedida, selectedColor, addItem]);
+   263→
+   264→  const handleToggleFavorite = useCallback(() => {
+   265→    if (!product || !selectedPack) return;
+   266→    toggleFavorite(product, selectedPack.cantidad);
+   267→    setHeartActive(true);
+   268→    setTimeout(() => setHeartActive(false), 600);
+   269→  }, [product, selectedPack, toggleFavorite]);
+   270→
+   271→  const handleWhatsApp = useCallback(() => {
+   272→    if (!product || !selectedPack) return;
+   273→    const medida = selectedMedida || product.medidas[0];
+   274→    const color = selectedColor || product.colores[0];
+   275→    const msg = [
+   276→      'Hola GUDSTOR PACK 👋',
+   277→      '',
+   278→      'Deseo cotizar el siguiente producto:',
+   279→      '',
+   280→      `📦 ${product.nombre}`,
+   281→      `📐 Medida: ${medida}`,
+   282→      `🎨 Color: ${color}`,
+   283→      `📦 Pack: ${selectedPack.cantidad} unidades`,
+   284→      `💰 Precio: ${formatPrice(selectedPack.precio)}`,
+   285→      `🔢 Cantidad: ${quantity} pack${quantity > 1 ? 's' : ''}`,
+   286→      `💵 Total: ${formatPrice(selectedPack.precio * quantity)}`,
+   287→      '',
+   288→      'Gracias.',
+   289→    ].join('\n');
+   290→    window.open(`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+   291→  }, [product, selectedPack, selectedMedida, selectedColor, quantity]);
+   292→
+   293→  if (!product) {
+   294→    return (
+   295→      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+   296→        <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4">
+   297→          <Package className="w-8 h-8 text-muted-foreground" />
+   298→        </div>
+   299→        <h1 className="text-lg font-bold text-foreground mb-2">Producto no encontrado</h1>
+   300→        <p className="text-muted-foreground mb-4 text-center text-sm">
+   301→          El producto que buscas no existe o fue removido.
+   302→        </p>
+   303→        <Link
+   304→          href="/productos"
+   305→          className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-xl"
+   306→        >
+   307→          <ArrowLeft className="w-4 h-4" />
+   308→          Volver al catálogo
+   309→        </Link>
+   310→      </div>
+   311→    );
+   312→  }
+   313→
+   314→  const relatedProducts = visibleProducts
+   315→    .filter((p) => p.categoria === product.categoria && p.id !== product.id)
+   316→    .slice(0, 8);
+   317→
+   318→  // Category-specific FAQs
+   319→  const categoryFAQs: Record<string, { q: string; a: string }[]> = {
+   320→    Cajas: [
+   321→      { q: '¿Cuál es el tiempo de entrega?', a: 'El tiempo de entrega es de 24-48 horas en Lima Metropolitana y 48-72 horas hábiles a provincias. Pedidos realizados antes de las 2pm se despachan el mismo día.' },
+   322→      { q: '¿Tienen descuento por mayor?', a: 'Sí, ofrecemos descuentos progresivos. Desde 25 unidades ya tienes precios especiales, y a partir de 100 unidades el descuento es aún mayor. Contáctanos por WhatsApp para cotizaciones personalizadas.' },
+   323→      { q: '¿Puedo personalizar el tamaño de la caja?', a: 'Sí, fabricamos cajas a medida. Solo envíanos las dimensiones que necesitas y te cotizamos en menos de 1 hora. Mínimo de pedido para medidas personalizadas: 100 unidades.' },
+   324→      { q: '¿Las cajas soportan peso pesado?', a: 'Nuestras cajas de doble corrugado soportan hasta 30kg dependiendo del tamaño. Las cajas de triple corrugado pueden soportar hasta 50kg. Te asesoramos según tu necesidad.' },
+   325→      { q: '¿Qué tipo de material usan?', a: 'Utilizamos cartón corrugado de alta resistencia, certificado con estándares internacionales. Disponemos en kraft (marrón natural) y blanco, según tu preferencia.' },
+   326→    ],
+   327→    Films: [
+   328→      { q: '¿Cuál es el grosor del film?', a: 'Disponemos de film estirable en diferentes grosores: 17 micras (uso liviano), 20 micras (uso estándar) y 23 micras (uso industrial). El grosor ideal depende de tu aplicación.' },
+   329→      { q: '¿Es resistente a la perforación?', a: 'Sí, nuestro film estirable tiene alta resistencia a la perforación y estiramiento. Es ideal para paletizar y proteger mercancías durante el transporte.' },
+   330→      { q: '¿Venden por rollo o por pallet?', a: 'Ambas opciones están disponibles. Puedes comprar rollos individuales desde 1 unidad, o pallets completos con precios especiales para volumen.' },
+   331→      { q: '¿Tienen film para alimentos?', a: 'Sí, contamos con film apto para contacto alimentario certificado. Es perfecto para envolver alimentos y mantener su frescura.' },
+   332→    ],
+   333→    Cintas: [
+   334→      { q: '¿Qué tan resistente es la cinta?', a: 'Nuestras cintas de embalaje tienen alta adhesividad y resistencia al desgarre. La cinta de 48mm soporta hasta 15kg de peso en cierre vertical.' },
+   335→      { q: '¿Puedo personalizar la cinta con mi logo?', a: 'Sí, ofrecemos cintas personalizadas con tu logo, colores corporativos o mensajes promocionales. Mínimo de pedido: 100 rollos. Te enviamos diseño sin costo.' },
+   336→      { q: '¿Cuántos metros tiene cada rollo?', a: 'Dependiendo del ancho: los rollos de 48mm tienen 100m, los de 72mm tienen 100m, y los de 100mm tienen 50m. Todos con núcleo de cartón resistente.' },
+   337→      { q: '¿Tienen cinta para frío?', a: 'Sí, contamos con cinta especial para ambientes fríos (hasta -20°C). Ideal para cámaras de frío e industria alimentaria.' },
+   338→    ],
+   339→    Protección: [
+   340→      { q: '¿Para qué productos es recomendado el papel burbuja?', a: 'El papel burbuja es ideal para proteger artículos frágiles como electrónicos, vidrios, cerámicas y productos decorativos durante el envío y almacenamiento.' },
+   341→      { q: '¿Qué densidades de espuma tienen?', a: 'Disponemos de espuma de polietileno en densidades de 15kg/m³ (blanda), 20kg/m³ (media) y 25kg/m³ (firme). Cada densidad se adapta a diferentes niveles de protección.' },
+   342→      { q: '¿Venden por metro o por rollo?', a: 'Ambas opciones. Puedes comprar cortes a medida por metro lineal, o rollos completos de 50m y 100m para uso industrial.' },
+   343→      { q: '¿Es reciclable el material de protección?', a: 'Sí, todos nuestros materiales de protección son 100% reciclables. Promovemos el embalaje sostenible y ofrecemos alternativas ecológicas.' },
+   344→    ],
+   345→    Bolsas: [
+   346→      { q: '¿Qué capacidad soportan las bolsas?', a: 'Nuestras bolsas soportan desde 5kg hasta 25kg dependiendo del tipo y grosor. Las bolsas de polietileno reforzado son las más resistentes.' },
+   347→      { q: '¿Tienen bolsas biodegradables?', a: 'Sí, contamos con línea ecológica de bolsas biodegradables que se degradan en 12-18 meses. Ideales para empresas con compromiso ambiental.' },
+   348→      { q: '¿Puedo pedir bolsas impresas?', a: 'Sí, ofrecemos impresión hasta 6 colores con tu diseño. Mínimo de pedido para bolsas impresas: 500 unidades. Te asesoramos en el diseño sin costo.' },
+   349→      { q: '¿Qué tipos de bolsas tienen?', a: 'Disponemos de bolsas de polietileno (planas y con fuelle), bolsas de papel kraft, bolsas ziplock y bolsas para uso alimentario. Todos los tamaños disponibles.' },
+   350→    ],
+   351→  };
+   352→
+   353→  const productFAQs = categoryFAQs[product.categoria] || categoryFAQs['Cajas'];
+   354→
+   355→  const tabs: { key: TabKey; label: string }[] = [
+   356→    { key: 'descripcion', label: 'Descripción' },
+   357→    { key: 'especificaciones', label: 'Especificaciones' },
+   358→    { key: 'envios', label: 'Envíos' },
+   359→    { key: 'faq', label: '¿Preguntas frecuentes?' },
+   360→  ];
+   361→
+   362→  // Shipping tiers
+   363→  const shippingTiers = [
+   364→    { min: 25, max: 49, label: '25 - 49 uds', info: 'Envío estándar' },
+   365→    { min: 50, max: 99, label: '50 - 99 uds', info: 'Envío económico' },
+   366→    { min: 100, max: 499, label: '100 - 499 uds', info: 'Envío mayorista' },
+   367→    { min: 500, max: 999, label: '500 - 999 uds', info: 'Envío distribuidor' },
+   368→    { min: 1000, max: null, label: '1,000+ uds', info: 'Envío industrial' },
+   369→  ];
+   370→
+   371→  // Category navigation items
+   372→  const categoryItems = [
+   373→    { name: 'Cajas', href: '/productos?categoria=Cajas', icon: Box },
+   374→    { name: 'Films', href: '/productos?categoria=Films', icon: Layers },
+   375→    { name: 'Cintas', href: '/productos?categoria=Cintas', icon: Ruler },
+   376→    { name: 'Protección', href: '/productos?categoria=Protección', icon: CircleDot },
+   377→    { name: 'Bolsas', href: '/productos?categoria=Bolsas', icon: ShoppingBag },
+   378→  ];
+   379→
+   380→  return (
+   381→    <div className="min-h-screen pb-[120px] md:pb-0">
+   382→      {/* ============================================================ */}
+   383→      {/* MOBILE: Sticky top bar with back + title + favorite          */}
+   384→      {/* ============================================================ */}
+   385→      <div className="md:hidden sticky top-[56px] z-30 bg-white/90 backdrop-blur-md border-b border-border/30">
+   386→        <div className="flex items-center justify-between px-3 h-11">
+   387→          <Link href="/productos" className="flex items-center gap-1.5 text-sm font-medium text-foreground/80 active:text-primary">
+   388→            <ArrowLeft className="w-4 h-4" />
+   389→            <span className="max-w-[180px] truncate">{product.nombre}</span>
+   390→          </Link>
+   391→          <button
+   392→            onClick={handleToggleFavorite}
+   393→            className="p-2 active:bg-red-50 rounded-xl transition-colors"
+   394→          >
+   395→            <motion.div animate={heartActive ? { scale: [1, 1.4, 0.8, 1] } : { scale: 1 }} transition={{ duration: 0.4 }}>
+   396→              <Heart className={`w-5 h-5 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-foreground/30'}`} />
+   397→            </motion.div>
+   398→          </button>
+   399→        </div>
+   400→      </div>
+   401→
+   402→      {/* DESKTOP Breadcrumb */}
+   403→      <div className="hidden md:block bg-muted/30 border-b border-border/50">
+   404→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+   405→          <nav className="flex items-center gap-1.5 text-xs text-muted-foreground overflow-x-auto">
+   406→            <Link href="/" className="hover:text-primary transition-colors shrink-0">Inicio</Link>
+   407→            <ChevronRight className="w-3 h-3 shrink-0" />
+   408→            <Link href="/productos" className="hover:text-primary transition-colors shrink-0">Productos</Link>
+   409→            <ChevronRight className="w-3 h-3 shrink-0" />
+   410→            <Link href={`/productos?categoria=${encodeURIComponent(product.categoria)}`} className="hover:text-primary transition-colors shrink-0">
+   411→              {product.categoria}
+   412→            </Link>
+   413→            <ChevronRight className="w-3 h-3 shrink-0" />
+   414→            <span className="text-foreground font-medium truncate">{product.nombre}</span>
+   415→          </nav>
+   416→        </div>
+   417→      </div>
+   418→
+   419→      {/* ============================================================ */}
+   420→      {/* MAIN CONTENT — Mobile-First Single Column Layout             */}
+   421→      {/* ============================================================ */}
+   422→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+   423→
+   424→        {/* ── MOBILE: Horizontal category strip ── */}
+   425→        <nav className="md:hidden mb-4 -mx-4 px-4">
+   426→          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+   427→            {categoryItems.map((cat) => {
+   428→              const isActive = cat.name === product.categoria;
+   429→              const CatIcon = cat.icon;
+   430→              return (
+   431→                <Link
+   432→                  key={cat.name}
+   433→                  href={cat.href}
+   434→                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-all shrink-0 ${
+   435→                    isActive
+   436→                      ? 'bg-primary text-primary-foreground'
+   437→                      : 'text-foreground/60 bg-muted/50 border border-border/50'
+   438→                  }`}
+   439→                >
+   440→                  <CatIcon className="w-3 h-3" />
+   441→                  {cat.name}
+   442→                </Link>
+   443→              );
+   444→            })}
+   445→          </div>
+   446→        </nav>
+   447→
+   448→        {/* ── Desktop: 3-column layout ── */}
+   449→        <div className="hidden lg:grid lg:grid-cols-[220px_1fr_1fr] gap-6">
+   450→
+   451→          {/* LEFT SIDEBAR — Vertical Category Navigation */}
+   452→          <aside>
+   453→            <div className="sticky top-[96px] bg-card border border-border/60 rounded-2xl p-4">
+   454→              <div className="flex items-center gap-2 mb-3">
+   455→                <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
+   456→                  <LayoutGrid className="w-3.5 h-3.5 text-primary" />
+   457→                </div>
+   458→                <span className="text-xs font-bold uppercase tracking-wider text-foreground">Categorías</span>
+   459→              </div>
+   460→              <div className="space-y-1">
+   461→                {[
+   462→                  { name: 'Todos', href: '/productos', icon: LayoutGrid, activeClass: 'bg-primary text-primary-foreground', hoverClass: 'hover:bg-muted/60' },
+   463→                  { name: 'Cajas', href: '/productos?categoria=Cajas', icon: Box, activeClass: 'bg-amber-500/10 text-amber-700 border-l-2 border-amber-500', hoverClass: 'hover:bg-amber-500/5' },
+   464→                  { name: 'Films', href: '/productos?categoria=Films', icon: Layers, activeClass: 'bg-teal-500/10 text-teal-700 border-l-2 border-teal-500', hoverClass: 'hover:bg-teal-500/5' },
+   465→                  { name: 'Cintas', href: '/productos?categoria=Cintas', icon: Ruler, activeClass: 'bg-blue-500/10 text-blue-700 border-l-2 border-blue-500', hoverClass: 'hover:bg-blue-500/5' },
+   466→                  { name: 'Protección', href: '/productos?categoria=Protección', icon: CircleDot, activeClass: 'bg-purple-500/10 text-purple-700 border-l-2 border-purple-500', hoverClass: 'hover:bg-purple-500/5' },
+   467→                  { name: 'Bolsas', href: '/productos?categoria=Bolsas', icon: ShoppingBag, activeClass: 'bg-green-500/10 text-green-700 border-l-2 border-green-500', hoverClass: 'hover:bg-green-500/5' },
+   468→                ].map((cat) => {
+   469→                  const isActive = cat.name === 'Todos' ? false : cat.name === product.categoria;
+   470→                  const CatIcon = cat.icon;
+   471→                  return (
+   472→                    <Link
+   473→                      key={cat.name}
+   474→                      href={cat.href}
+   475→                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+   476→                        isActive ? cat.activeClass : `text-foreground/70 ${cat.hoverClass}`
+   477→                      }`}
+   478→                    >
+   479→                      <CatIcon className={`w-4 h-4 shrink-0 ${isActive ? '' : 'text-muted-foreground/60'}`} />
+   480→                      <span>{cat.name}</span>
+   481→                    </Link>
+   482→                  );
+   483→                })}
+   484→              </div>
+   485→            </div>
+   486→          </aside>
+   487→
+   488→          {/* IMAGE SECTION — Desktop */}
+   489→          <motion.div
+   490→            initial={{ opacity: 0, x: -20 }}
+   491→            animate={{ opacity: 1, x: 0 }}
+   492→            transition={{ duration: 0.3 }}
+   493→            className="lg:sticky lg:top-[96px] lg:self-start"
+   494→          >
+   495→            <button
+   496→              onClick={() => setIsLightboxOpen(true)}
+   497→              className="relative w-full min-h-[400px] xl:min-h-[480px] bg-gradient-to-br from-primary/5 via-muted to-secondary/5 rounded-2xl border border-border/50 overflow-hidden cursor-zoom-in group"
+   498→            >
+   499→              {/* Image counter */}
+   500→              <div className="absolute top-3 right-3 z-10 px-2.5 py-1 bg-black/30 backdrop-blur-sm text-white text-[11px] font-medium rounded-lg">
+   501→                {currentImageIndex + 1}/{product.imagenes.length}
+   502→              </div>
+   503→              <div className="absolute inset-0 flex items-center justify-center">
+   504→                <div className="w-28 h-28 bg-gradient-to-br from-primary/15 to-secondary/15 rounded-3xl flex items-center justify-center">
+   505→                  <Package className="w-14 h-14 text-primary/50" />
+   506→                </div>
+   507→              </div>
+   508→              <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-3 py-1.5 bg-black/20 backdrop-blur-sm text-white text-xs rounded-lg">
+   509→                <ZoomIn className="w-3.5 h-3.5" />
+   510→                Toca para ampliar
+   511→              </div>
+   512→            </button>
+   513→            {/* Thumbnail strip — BELOW main image, horizontal row */}
+   514→            {product.imagenes.length > 1 && (
+   515→              <div className="hidden lg:grid grid-cols-4 gap-2 mt-2">
+   516→                {product.imagenes.map((_, index) => (
+   517→                  <button
+   518→                    key={index}
+   519→                    onClick={() => { setCurrentImageIndex(index); setIsZoomed(false); }}
+   520→                    className={`aspect-square bg-gradient-to-br from-muted to-muted/50 rounded-xl border-2 flex items-center justify-center transition-all hover:opacity-80 ${
+   521→                      currentImageIndex === index
+   522→                        ? 'border-primary bg-primary/5 shadow-sm'
+   523→                        : 'border-border/50'
+   524→                    }`}
+   525→                  >
+   526→                    <Package className={`w-7 h-7 ${currentImageIndex === index ? 'text-primary/50' : 'text-muted-foreground/30'}`} />
+   527→                  </button>
+   528→                ))}
+   529→              </div>
+   530→            )}
+   531→          </motion.div>
+   532→
+   533→          {/* PRODUCT INFO — Desktop */}
+   534→          <motion.div
+   535→            initial={{ opacity: 0, x: 20 }}
+   536→            animate={{ opacity: 1, x: 0 }}
+   537→            transition={{ duration: 0.3, delay: 0.1 }}
+   538→            className="space-y-5"
+   539→          >
+   540→            {/* Desktop Title + Tags */}
+   541→            <div>
+   542→              <div className="flex items-start justify-between">
+   543→                <div className="flex-1 min-w-0">
+   544→                  <div className="flex flex-wrap gap-2 mb-3">
+   545→                    {product.etiquetas.map((etiqueta) => (
+   546→                      <span key={etiqueta} className="px-3 py-1 text-xs font-medium text-primary bg-primary/8 rounded-lg">{etiqueta}</span>
+   547→                    ))}
+   548→                  </div>
+   549→                  <h1 className="text-2xl xl:text-3xl font-extrabold text-foreground leading-tight">{product.nombre}</h1>
+   550→                  <p className="text-sm text-muted-foreground mt-1">{product.material} · {product.categoria}</p>
+   551→                </div>
+   552→                <motion.button whileTap={{ scale: 0.7 }} onClick={handleToggleFavorite}
+   553→                  className="ml-3 p-3 rounded-xl border border-border/50 hover:border-red-200 hover:bg-red-50 transition-all shrink-0">
+   554→                  <motion.div animate={heartActive ? { scale: [1, 1.4, 0.8, 1.15, 1], rotate: [0, -10, 10, -5, 0] } : { scale: 1 }}>
+   555→                    <Heart className={`w-6 h-6 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-foreground/30'}`} />
+   556→                  </motion.div>
+   557→                </motion.button>
+   558→              </div>
+   559→            </div>
+   560→
+   561→            {/* Description — Collapsible */}
+   562→            <div className="bg-muted/30 rounded-xl p-4">
+   563→              <div className={`overflow-hidden transition-all duration-300 ease-in-out ${descExpanded ? 'max-h-[2000px]' : 'max-h-[72px]'}`}>
+   564→                <p className="text-sm text-muted-foreground leading-relaxed">
+   565→                  {product.descripcion}
+   566→                </p>
+   567→              </div>
+   568→              {product.descripcion.length > 120 && (
+   569→                <button
+   570→                  onClick={() => setDescExpanded(!descExpanded)}
+   571→                  className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-green-600 hover:text-green-700 active:text-green-800 transition-colors"
+   572→                >
+   573→                  {descExpanded ? 'Ver menos' : 'Ver más'}
+   574→                  {descExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+   575→                </button>
+   576→              )}
+   577→            </div>
+   578→
+   579→            {/* Price Display */}
+   580→            <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
+   581→              <p className="text-sm text-muted-foreground line-through">
+   582→                {formatPrice(product.precio * (selectedPack?.cantidad || 25))}
+   583→              </p>
+   584→              <div className="flex items-end gap-2">
+   585→                <span className="text-3xl xl:text-4xl font-extrabold text-primary">
+   586→                  {formatPrice(selectedPack?.precio || 0)}
+   587→                </span>
+   588→                <span className="text-xs text-muted-foreground mb-1">/ {selectedPack?.cantidad} uds</span>
+   589→              </div>
+   590→              <p className="text-xs text-muted-foreground mt-1">
+   591→                Ahorras {formatPrice((product.precio * (selectedPack?.cantidad || 25)) - (selectedPack?.precio || 0))} comprando {selectedPack?.cantidad} unidades
+   592→                {selectedPack && selectedPack.descuento > 0 && (
+   593→                  <span className="ml-1.5 inline-block px-1.5 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 rounded-md">
+   594→                    -{selectedPack.descuento}%
+   595→                  </span>
+   596→                )}
+   597→              </p>
+   598→            </div>
+   599→
+   600→            {/* Pack Selector */}
+   601→            <div>
+   602→              <h3 className="text-sm font-semibold text-foreground mb-2">Elige tu Pack</h3>
+   603→              <div className="grid grid-cols-3 gap-3">
+   604→                {product.packs.map((pack, i) => {
+   605→                  const originalPrice = product.precio * pack.cantidad;
+   606→                  const isSelected = selectedPackIndex === i;
+   607→                  return (
+   608→                    <motion.button
+   609→                      key={pack.cantidad}
+   610→                      whileTap={{ scale: 0.97 }}
+   611→                      onClick={() => setSelectedPackIndex(i)}
+   612→                      className={`relative p-3 rounded-xl border-2 transition-all text-center ${
+   613→                        isSelected
+   614→                          ? 'border-primary bg-primary/5 shadow-md shadow-primary/10'
+   615→                          : 'border-border hover:border-primary/30'
+   616→                      }`}
+   617→                    >
+   618→                      <p className="text-xs text-muted-foreground line-through">
+   619→                        {formatPrice(originalPrice)}
+   620→                      </p>
+   621→                      <p className="text-base font-extrabold text-primary">
+   622→                        {formatPrice(pack.precio)}
+   623→                      </p>
+   624→                      <div className="flex items-center justify-center gap-1.5 mt-0.5">
+   625→                        <p className="text-[10px] text-foreground/70 uppercase font-medium">
+   626→                          {pack.cantidad} UDS
+   627→                        </p>
+   628→                        {pack.descuento > 0 && (
+   629→                          <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 rounded-md">
+   630→                            -{pack.descuento}%
+   631→                          </span>
+   632→                        )}
+   633→                      </div>
+   634→                    </motion.button>
+   635→                  );
+   636→                })}
+   637→              </div>
+   638→            </div>
+   639→
+   640→            {/* Color & Size */}
+   641→            <div className="flex gap-4">
+   642→              <div className="flex-1">
+   643→                <h3 className="text-sm font-semibold text-foreground mb-2">Color</h3>
+   644→                <div className="flex flex-wrap gap-1.5">
+   645→                  {product.colores.map((color) => (
+   646→                    <button key={color} onClick={() => setSelectedColor(color)}
+   647→                      className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all min-h-[36px] ${
+   648→                        selectedColor === color || (!selectedColor && product.colores[0] === color)
+   649→                          ? 'border-primary bg-primary/10 text-primary'
+   650→                          : 'border-border text-foreground/70'
+   651→                      }`}
+   652→                    >{color}</button>
+   653→                  ))}
+   654→                </div>
+   655→              </div>
+   656→              <div className="flex-1">
+   657→                <h3 className="text-sm font-semibold text-foreground mb-2">Medida</h3>
+   658→                <div className="flex flex-wrap gap-1.5">
+   659→                  {product.medidas.map((medida) => (
+   660→                    <button key={medida} onClick={() => setSelectedMedida(medida)}
+   661→                      className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all min-h-[36px] ${
+   662→                        selectedMedida === medida || (!selectedMedida && product.medidas[0] === medida)
+   663→                          ? 'border-primary bg-primary/10 text-primary'
+   664→                          : 'border-border text-foreground/70'
+   665→                      }`}
+   666→                    >{medida}</button>
+   667→                  ))}
+   668→                </div>
+   669→              </div>
+   670→            </div>
+   671→
+   672→            {/* WhatsApp CTA */}
+   673→            <div className="bg-gradient-to-br from-[#25D366]/5 to-[#25D366]/10 border border-[#25D366]/20 rounded-2xl p-5">
+   674→              <div className="flex items-center gap-3 mb-3">
+   675→                <div className="w-10 h-10 bg-[#25D366] rounded-xl flex items-center justify-center shrink-0">
+   676→                  <MessageCircle className="w-5 h-5 text-white" />
+   677→                </div>
+   678→                <div>
+   679→                  <h3 className="text-sm font-bold text-foreground">¿Necesitas ayuda o cotización personalizada?</h3>
+   680→                  <p className="text-xs text-muted-foreground">Escríbenos y te respondemos al instante</p>
+   681→                </div>
+   682→              </div>
+   683→              <a
+   684→                href={`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(buildProductMessage({
+   685→                  nombre: product.nombre,
+   686→                  packCantidad: selectedPack?.cantidad || 25,
+   687→                  packPrecio: formatPrice(selectedPack?.precio || 0),
+   688→                }))}`}
+   689→                target="_blank"
+   690→                rel="noopener noreferrer"
+   691→              >
+   692→                <motion.button
+   693→                  whileHover={{ scale: 1.02 }}
+   694→                  whileTap={{ scale: 0.98 }}
+   695→                  className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-[#25D366] text-white font-semibold rounded-xl shadow-lg shadow-[#25D366]/20 hover:shadow-xl transition-shadow"
+   696→                >
+   697→                  <MessageCircle className="w-5 h-5" />
+   698→                  Cotizar por WhatsApp
+   699→                </motion.button>
+   700→              </a>
+   701→            </div>
+   702→
+   703→            {/* Desktop Add to Cart */}
+   704→            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleAddToCart}
+   705→              className={`w-full flex items-center justify-center gap-2 px-6 py-4 font-semibold rounded-xl shadow-lg transition-all ${
+   706→                addedToCart ? 'bg-secondary text-secondary-foreground' : 'bg-primary text-primary-foreground shadow-primary/20'
+   707→              }`}>
+   708→              {addedToCart ? <><Check className="w-5 h-5" /> ¡Agregado!</> : <><ShoppingCart className="w-5 h-5" /> Agregar al Carrito</>}
+   709→            </motion.button>
+   710→
+   711→            {/* TABS */}
+   712→            <div>
+   713→              <div className="flex border-b border-border/50 overflow-x-auto">
+   714→                {tabs.map((tab) => (
+   715→                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+   716→                    className={`relative px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors min-h-[44px] ${
+   717→                      activeTab === tab.key ? 'text-primary' : 'text-muted-foreground'
+   718→                    }`}>
+   719→                    {tab.label}
+   720→                    {activeTab === tab.key && (
+   721→                      <motion.div layoutId="tab-underline-d" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+   722→                    )}
+   723→                  </button>
+   724→                ))}
+   725→              </div>
+   726→
+   727→              <AnimatePresence mode="wait">
+   728→                <motion.div key={activeTab} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }} className="py-4">
+   729→                  {activeTab === 'descripcion' && (
+   730→                    <div>
+   731→                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${descExpanded ? 'max-h-[2000px]' : 'max-h-[60px]'}`}>
+   732→                        <p className="text-sm text-muted-foreground leading-relaxed">
+   733→                          Producto ideal para uso en ecommerce, tiendas por departamento y logística empresarial.
+   734→                          Diseñado para proteger tus mercancías durante el transporte y almacenamiento.
+   735→                          Fabricado con materiales de alta calidad que cumplen con los estándares internacionales de embalaje.
+   736→                        </p>
+   737→                        <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+   738→                          {product.descripcion}
+   739→                        </p>
+   740→                      </div>
+   741→                      <button
+   742→                        onClick={() => setDescExpanded(!descExpanded)}
+   743→                        className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-green-600 hover:text-green-700 active:text-green-800 transition-colors"
+   744→                      >
+   745→                        {descExpanded ? 'Ver menos' : 'Ver más'}
+   746→                        {descExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+   747→                      </button>
+   748→                    </div>
+   749→                  )}
+   750→                  {activeTab === 'especificaciones' && (
+   751→                    <div className="space-y-2">
+   752→                      {[
+   753→                        ['Material', product.material],
+   754→                        ['Categoría', product.categoria],
+   755→                        ['Medidas disponibles', product.medidas.join(', ')],
+   756→                        ['Colores disponibles', product.colores.join(', ')],
+   757→                        ['Packs disponibles', product.packs.map(p => `${p.cantidad} uds (-${p.descuento}%)`).join(', ')],
+   758→                      ].map(([label, value]) => (
+   759→                        <div key={label} className="flex justify-between py-2.5 border-b border-border/30 text-sm">
+   760→                          <span className="text-muted-foreground">{label}</span>
+   761→                          <span className="font-medium text-foreground text-right ml-4">{value}</span>
+   762→                        </div>
+   763→                      ))}
+   764→                    </div>
+   765→                  )}
+   766→                  {activeTab === 'envios' && (
+   767→                    <div className="space-y-5">
+   768→                      <div>
+   769→                        <h4 className="text-sm font-bold text-foreground mb-3">Envíos a Todo el Perú</h4>
+   770→                        <div className="bg-primary/5 rounded-xl border border-primary/10 overflow-hidden">
+   771→                          <table className="w-full text-sm">
+   772→                            <thead>
+   773→                              <tr className="border-b border-primary/10">
+   774→                                <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase">Cantidad</th>
+   775→                                <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase">Tipo de Envío</th>
+   776→                              </tr>
+   777→                            </thead>
+   778→                            <tbody>
+   779→                              {shippingTiers.map((tier) => (
+   780→                                <tr key={tier.label} className="border-b border-primary/5 last:border-0">
+   781→                                  <td className="px-4 py-2 font-medium text-foreground">{tier.label}</td>
+   782→                                  <td className="px-4 py-2 text-muted-foreground">{tier.info}</td>
+   783→                                </tr>
+   784→                              ))}
+   785→                            </tbody>
+   786→                          </table>
+   787→                        </div>
+   788→                      </div>
+   789→                      <div className="space-y-3">
+   790→                        {[
+   791→                          { icon: Truck, title: 'Despacho en 24h', desc: 'Pedidos realizados antes de las 2pm se despachan el mismo día para Lima Metropolitana. Envíos a provincias en 48-72 horas hábiles.' },
+   792→                          { icon: Shield, title: 'Envío Seguro', desc: 'Todos nuestros paquetes incluyen protección adicional contra golpes y manipulación durante el transporte.' },
+   793→                          { icon: Phone, title: 'Seguimiento de tu pedido', desc: 'Recibe notificaciones por WhatsApp con el estado de tu envío y coordenadas de delivery en tiempo real.' },
+   794→                        ].map(({ icon: Icon, title, desc }) => (
+   795→                          <div key={title} className="flex gap-3">
+   796→                            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+   797→                              <Icon className="w-5 h-5 text-primary" />
+   798→                            </div>
+   799→                            <div>
+   800→                              <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+   801→                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{desc}</p>
+   802→                            </div>
+   803→                          </div>
+   804→                        ))}
+   805→                      </div>
+   806→                    </div>
+   807→                  )}
+   808→                  {activeTab === 'faq' && (
+   809→                    <div className="space-y-0">
+   810→                      {productFAQs.map((faq, i) => (
+   811→                        <div key={i} className="border-b border-gray-200 last:border-0">
+   812→                          <button
+   813→                            onClick={() => setFaqOpen(prev => ({ ...prev, [i]: !prev[i] }))}
+   814→                            className="w-full flex items-center justify-between py-3 px-1 text-sm font-semibold text-gray-900 hover:bg-gray-50 transition-colors text-left"
+   815→                          >
+   816→                            <span>{faq.q}</span>
+   817→                            <span className="text-green-600 shrink-0 ml-2">
+   818→                              {faqOpen[i] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+   819→                            </span>
+   820→                          </button>
+   821→                          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${faqOpen[i] ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+   822→                            <p className="pb-3 px-1 text-sm text-gray-600 leading-relaxed pl-4">
+   823→                              {faq.a}
+   824→                            </p>
+   825→                          </div>
+   826→                        </div>
+   827→                      ))}
+   828→                    </div>
+   829→                  )}
+   830→                </motion.div>
+   831→              </AnimatePresence>
+   832→            </div>
+   833→
+   834→            {/* Desktop benefits */}
+   835→            <div className="grid grid-cols-2 gap-3">
+   836→              {[
+   837→                { icon: Truck, label: 'Envío Rápido' },
+   838→                { icon: Shield, label: 'Garantía de Calidad' },
+   839→              ].map((item) => (
+   840→                <div key={item.label} className="flex flex-col items-center gap-1.5 p-3 bg-muted/30 rounded-xl text-center">
+   841→                  <item.icon className="w-5 h-5 text-primary" />
+   842→                  <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+   843→                </div>
+   844→              ))}
+   845→            </div>
+   846→          </motion.div>
+   847→        </div>
+   848→
+   849→        {/* ============================================================ */}
+   850→        {/* MOBILE: Single-column layout (visible below md)              */}
+   851→        {/* ============================================================ */}
+   852→        <div className="lg:hidden space-y-4">
+   853→
+   854→          {/* ── Mobile Product Info ── */}
+   855→          <motion.div
+   856→            initial={{ opacity: 0, y: 10 }}
+   857→            animate={{ opacity: 1, y: 0 }}
+   858→            transition={{ duration: 0.3, delay: 0.1 }}
+   859→            className="space-y-3"
+   860→          >
+   861→            {/* Tags + Title */}
+   862→            <div>
+   863→              <div className="flex flex-wrap gap-1.5 mb-1.5">
+   864→                {product.etiquetas.slice(0, 3).map((etiqueta) => (
+   865→                  <span key={etiqueta} className="px-2 py-0.5 text-[10px] font-medium text-primary bg-primary/8 rounded-md">{etiqueta}</span>
+   866→                ))}
+   867→                <span className="px-2 py-0.5 text-[10px] font-medium text-muted-foreground bg-muted/50 rounded-md">{product.categoria}</span>
+   868→              </div>
+   869→              <h1 className="text-lg font-bold text-foreground leading-tight">{product.nombre}</h1>
+   870→              <p className="text-xs text-muted-foreground mt-0.5">{product.material}</p>
+   871→            </div>
+   872→
+   873→            {/* Price */}
+   874→            <div className="bg-primary/5 rounded-xl p-3 border border-primary/10">
+   875→              <p className="text-xs text-muted-foreground line-through">
+   876→                {formatPrice(product.precio * (selectedPack?.cantidad || 25))}
+   877→              </p>
+   878→              <div className="flex items-end gap-2">
+   879→                <span className="text-2xl font-extrabold text-primary">
+   880→                  {formatPrice(selectedPack?.precio || 0)}
+   881→                </span>
+   882→                <span className="text-[11px] text-muted-foreground mb-0.5">/ {selectedPack?.cantidad} uds</span>
+   883→              </div>
+   884→              <p className="text-[11px] text-muted-foreground mt-0.5">
+   885→                Ahorras {formatPrice((product.precio * (selectedPack?.cantidad || 25)) - (selectedPack?.precio || 0))}
+   886→                {selectedPack && selectedPack.descuento > 0 && (
+   887→                  <span className="ml-1.5 inline-block px-1.5 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 rounded-md">
+   888→                    -{selectedPack.descuento}%
+   889→                  </span>
+   890→                )}
+   891→              </p>
+   892→            </div>
+   893→
+   894→            {/* Pack Selector — compact for mobile */}
+   895→            <div>
+   896→              <h3 className="text-xs font-semibold text-foreground mb-2">Elige tu Pack</h3>
+   897→              <div className="grid grid-cols-3 gap-1.5">
+   898→                {product.packs.map((pack, i) => {
+   899→                  const isSelected = selectedPackIndex === i;
+   900→                  return (
+   901→                    <motion.button
+   902→                      key={pack.cantidad}
+   903→                      whileTap={{ scale: 0.97 }}
+   904→                      onClick={() => setSelectedPackIndex(i)}
+   905→                      className={`p-2 rounded-xl border-2 transition-all text-center ${
+   906→                        isSelected
+   907→                          ? 'border-primary bg-primary/5 shadow-sm'
+   908→                          : 'border-border'
+   909→                      }`}
+   910→                    >
+   911→                      <p className="text-[10px] text-muted-foreground line-through">
+   912→                        {formatPrice(product.precio * pack.cantidad)}
+   913→                      </p>
+   914→                      <p className="text-sm font-extrabold text-primary">{formatPrice(pack.precio)}</p>
+   915→                      <div className="flex items-center justify-center gap-1 mt-0.5">
+   916→                        <span className="text-[9px] text-foreground/70 uppercase font-medium">{pack.cantidad} UDS</span>
+   917→                        {pack.descuento > 0 && (
+   918→                          <span className="text-[9px] font-bold text-primary">-{pack.descuento}%</span>
+   919→                        )}
+   920→                      </div>
+   921→                    </motion.button>
+   922→                  );
+   923→                })}
+   924→              </div>
+   925→            </div>
+   926→
+   927→            {/* Color & Medida — stacked on mobile */}
+   928→            <div className="space-y-3">
+   929→              <div>
+   930→                <h3 className="text-xs font-semibold text-foreground mb-1.5">Color</h3>
+   931→                <div className="flex flex-wrap gap-1.5">
+   932→                  {product.colores.map((color) => (
+   933→                    <button key={color} onClick={() => setSelectedColor(color)}
+   934→                      className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all ${
+   935→                        selectedColor === color || (!selectedColor && product.colores[0] === color)
+   936→                          ? 'border-primary bg-primary/10 text-primary'
+   937→                          : 'border-border text-foreground/70'
+   938→                      }`
+   939→                    }>{color}</button>
+   940→                  ))}
+   941→                </div>
+   942→              </div>
+   943→              <div>
+   944→                <h3 className="text-xs font-semibold text-foreground mb-1.5">Medida</h3>
+   945→                <div className="flex flex-wrap gap-1.5">
+   946→                  {product.medidas.map((medida) => (
+   947→                    <button key={medida} onClick={() => setSelectedMedida(medida)}
+   948→                      className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all ${
+   949→                        selectedMedida === medida || (!selectedMedida && product.medidas[0] === medida)
+   950→                          ? 'border-primary bg-primary/10 text-primary'
+   951→                          : 'border-border text-foreground/70'
+   952→                      }`
+   953→                    }>{medida}</button>
+   954→                  ))}
+   955→                </div>
+   956→              </div>
+   957→            </div>
+   958→
+   959→            {/* WhatsApp CTA — Mobile compact */}
+   960→            <div className="bg-gradient-to-br from-[#25D366]/5 to-[#25D366]/10 border border-[#25D366]/20 rounded-xl p-3">
+   961→              <div className="flex items-center gap-2.5 mb-2.5">
+   962→                <div className="w-8 h-8 bg-[#25D366] rounded-lg flex items-center justify-center shrink-0">
+   963→                  <MessageCircle className="w-4 h-4 text-white" />
+   964→                </div>
+   965→                <div className="min-w-0">
+   966→                  <h3 className="text-xs font-bold text-foreground">¿Necesitas cotización personalizada?</h3>
+   967→                </div>
+   968→              </div>
+   969→              <a
+   970→                href={`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(buildProductMessage({
+   971→                  nombre: product.nombre,
+   972→                  packCantidad: selectedPack?.cantidad || 25,
+   973→                  packPrecio: formatPrice(selectedPack?.precio || 0),
+   974→                }))}`}
+   975→                target="_blank"
+   976→                rel="noopener noreferrer"
+   977→                className="block"
+   978→              >
+   979→                <motion.button
+   980→                  whileTap={{ scale: 0.98 }}
+   981→                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] text-white text-sm font-semibold rounded-xl shadow-lg shadow-[#25D366]/20"
+   982→                >
+   983→                  <MessageCircle className="w-4 h-4" />
+   984→                  Cotizar por WhatsApp
+   985→                </motion.button>
+   986→              </a>
+   987→            </div>
+   988→
+   989→            {/* Mobile Tabs */}
+   990→            <div>
+   991→              <div className="flex border-b border-border/50 overflow-x-auto">
+   992→                {tabs.map((tab) => (
+   993→                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+   994→                    className={`relative px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors min-h-[40px] ${
+   995→                      activeTab === tab.key ? 'text-primary' : 'text-muted-foreground'
+   996→                    }`}>
+   997→                    {tab.label}
+   998→                    {activeTab === tab.key && (
+   999→                      <motion.div layoutId="tab-underline-m" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+  1000→                    )}
+  1001→                  </button>
+  1002→                ))}
+  1003→              </div>
+  1004→
+  1005→              <AnimatePresence mode="wait">
+  1006→                <motion.div key={activeTab} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }} className="py-3">
+  1007→                  {activeTab === 'descripcion' && (
+  1008→                    <div>
+  1009→                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${descExpanded ? 'max-h-[2000px]' : 'max-h-[48px]'}`}>
+  1010→                        <p className="text-xs text-muted-foreground leading-relaxed">
+  1011→                          Producto ideal para uso en ecommerce, tiendas por departamento y logística empresarial.
+  1012→                          Diseñado para proteger tus mercancías durante el transporte y almacenamiento.
+  1013→                        </p>
+  1014→                        <p className="text-xs text-muted-foreground leading-relaxed mt-1.5">
+  1015→                          {product.descripcion}
+  1016→                        </p>
+  1017→                      </div>
+  1018→                      <button
+  1019→                        onClick={() => setDescExpanded(!descExpanded)}
+  1020→                        className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-green-600 hover:text-green-700 active:text-green-800 transition-colors"
+  1021→                      >
+  1022→                        {descExpanded ? 'Ver menos' : 'Ver más'}
+  1023→                        {descExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+  1024→                      </button>
+  1025→                    </div>
+  1026→                  )}
+  1027→                  {activeTab === 'especificaciones' && (
+  1028→                    <div className="space-y-1.5">
+  1029→                      {[
+  1030→                        ['Material', product.material],
+  1031→                        ['Categoría', product.categoria],
+  1032→                        ['Medidas', product.medidas.join(', ')],
+  1033→                        ['Colores', product.colores.join(', ')],
+  1034→                        ['Packs', product.packs.map(p => `${p.cantidad} uds (-${p.descuento}%)`).join(', ')],
+  1035→                      ].map(([label, value]) => (
+  1036→                        <div key={label} className="flex justify-between py-2 border-b border-border/30 text-xs">
+  1037→                          <span className="text-muted-foreground">{label}</span>
+  1038→                          <span className="font-medium text-foreground text-right ml-3 max-w-[60%]">{value}</span>
+  1039→                        </div>
+  1040→                      ))}
+  1041→                    </div>
+  1042→                  )}
+  1043→                  {activeTab === 'envios' && (
+  1044→                    <div className="space-y-4">
+  1045→                      <div>
+  1046→                        <h4 className="text-xs font-bold text-foreground mb-2">Envíos a Todo el Perú</h4>
+  1047→                        <div className="bg-primary/5 rounded-xl border border-primary/10 overflow-hidden">
+  1048→                          <div className="divide-y divide-primary/5">
+  1049→                            {shippingTiers.map((tier) => (
+  1050→                              <div key={tier.label} className="flex justify-between px-3 py-2 text-xs">
+  1051→                                <span className="font-medium text-foreground">{tier.label}</span>
+  1052→                                <span className="text-muted-foreground">{tier.info}</span>
+  1053→                              </div>
+  1054→                            ))}
+  1055→                          </div>
+  1056→                        </div>
+  1057→                      </div>
+  1058→                      <div className="space-y-2.5">
+  1059→                        {[
+  1060→                          { icon: Truck, title: 'Despacho en 24h', desc: 'Pedidos antes de las 2pm se despachan el mismo día (Lima). Provincias en 48-72h.' },
+  1061→                          { icon: Shield, title: 'Envío Seguro', desc: 'Protección adicional contra golpes y manipulación durante el transporte.' },
+  1062→                          { icon: Phone, title: 'Seguimiento', desc: 'Notificaciones por WhatsApp con el estado de tu envío en tiempo real.' },
+  1063→                        ].map(({ icon: Icon, title, desc }) => (
+  1064→                          <div key={title} className="flex gap-2.5">
+  1065→                            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+  1066→                              <Icon className="w-4 h-4 text-primary" />
+  1067→                            </div>
+  1068→                            <div>
+  1069→                              <h4 className="text-xs font-semibold text-foreground">{title}</h4>
+  1070→                              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{desc}</p>
+  1071→                            </div>
+  1072→                          </div>
+  1073→                        ))}
+  1074→                      </div>
+  1075→                    </div>
+  1076→                  )}
+  1077→                  {activeTab === 'faq' && (
+  1078→                    <div className="space-y-0">
+  1079→                      {productFAQs.map((faq, i) => (
+  1080→                        <div key={i} className="border-b border-gray-200 last:border-0">
+  1081→                          <button
+  1082→                            onClick={() => setFaqOpen(prev => ({ ...prev, [i]: !prev[i] }))}
+  1083→                            className="w-full flex items-center justify-between py-2.5 px-1 text-xs font-semibold text-gray-900 hover:bg-gray-50 transition-colors text-left"
+  1084→                          >
+  1085→                            <span>{faq.q}</span>
+  1086→                            <span className="text-green-600 shrink-0 ml-2">
+  1087→                              {faqOpen[i] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+  1088→                            </span>
+  1089→                          </button>
+  1090→                          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${faqOpen[i] ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+  1091→                            <p className="pb-2.5 px-1 text-xs text-gray-600 leading-relaxed pl-4">
+  1092→                              {faq.a}
+  1093→                            </p>
+  1094→                          </div>
+  1095→                        </div>
+  1096→                      ))}
+  1097→                    </div>
+  1098→                  )}
+  1099→                </motion.div>
+  1100→              </AnimatePresence>
+  1101→            </div>
+  1102→          </motion.div>
+  1103→
+  1104→          {/* ── Mobile Image Gallery (BELOW product info) ── */}
+  1105→          <div className="space-y-2">
+  1106→            {/* Main Image — compact */}
+  1107→            <motion.div
+  1108→              initial={{ opacity: 0 }}
+  1109→              animate={{ opacity: 1 }}
+  1110→              transition={{ duration: 0.3 }}
+  1111→              className="relative w-full aspect-[4/3] max-h-[260px] bg-gradient-to-br from-primary/5 via-muted to-secondary/5 rounded-2xl border border-border/50 overflow-hidden"
+  1112→            >
+  1113→              {/* Nav Arrows */}
+  1114→              {product.imagenes.length > 1 && (
+  1115→                <>
+  1116→                  <button
+  1117→                    onClick={(e) => {
+  1118→                      e.stopPropagation();
+  1119→                      setCurrentImageIndex((prev) => (prev - 1 + product.imagenes.length) % product.imagenes.length);
+  1120→                      setIsZoomed(false);
+  1121→                    }}
+  1122→                    className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/70 backdrop-blur-sm rounded-full shadow-sm active:bg-white/90 transition-colors"
+  1123→                  >
+  1124→                    <ChevronLeft className="w-5 h-5 text-foreground/70" />
+  1125→                  </button>
+  1126→                  <button
+  1127→                    onClick={(e) => {
+  1128→                      e.stopPropagation();
+  1129→                      setCurrentImageIndex((prev) => (prev + 1) % product.imagenes.length);
+  1130→                      setIsZoomed(false);
+  1131→                    }}
+  1132→                    className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/70 backdrop-blur-sm rounded-full shadow-sm active:bg-white/90 transition-colors"
+  1133→                  >
+  1134→                    <ChevronRight className="w-5 h-5 text-foreground/70" />
+  1135→                  </button>
+  1136→                </>
+  1137→              )}
+  1138→
+  1139→              {/* Image counter badge */}
+  1140→              <div className="absolute top-2 right-2 z-10 px-2 py-1 bg-black/30 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
+  1141→                {currentImageIndex + 1}/{product.imagenes.length}
+  1142→              </div>
+  1143→
+  1144→              {/* Placeholder content */}
+  1145→              <div
+  1146→                className="absolute inset-0 flex items-center justify-center cursor-zoom-in"
+  1147→                onClick={() => setIsLightboxOpen(true)}
+  1148→              >
+  1149→                <div className={`flex items-center justify-center transition-all duration-300 ${
+  1150→                  isZoomed ? 'w-24 h-24' : 'w-16 h-16'
+  1151→                }`}>
+  1152→                  <div className="w-full h-full bg-gradient-to-br from-primary/15 to-secondary/15 rounded-3xl flex items-center justify-center">
+  1153→                    <Package className="w-8 h-8 text-primary/50" />
+  1154→                  </div>
+  1155→                </div>
+  1156→              </div>
+  1157→
+  1158→              {/* Tap to expand */}
+  1159→              <button
+  1160→                onClick={() => setIsLightboxOpen(true)}
+  1161→                className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-black/30 backdrop-blur-sm text-white text-[11px] rounded-lg active:bg-black/40 transition-colors"
+  1162→              >
+  1163→                <ZoomIn className="w-3.5 h-3.5" />
+  1164→                Ampliar
+  1165→              </button>
+  1166→            </motion.div>
+  1167→
+  1168→            {/* Image grid — show all images as a visible grid */}
+  1169→            {product.imagenes.length > 1 && (
+  1170→              <div className="grid grid-cols-4 gap-2">
+  1171→                {product.imagenes.map((_, index) => (
+  1172→                  <button
+  1173→                    key={index}
+  1174→                    onClick={() => { setCurrentImageIndex(index); setIsZoomed(false); }}
+  1175→                    className={`aspect-square rounded-xl border-2 overflow-hidden transition-all flex items-center justify-center ${
+  1176→                      currentImageIndex === index
+  1177→                        ? 'border-primary bg-primary/5 shadow-sm'
+  1178→                        : 'border-border/50 bg-muted/30'
+  1179→                    }`}
+  1180→                  >
+  1181→                    <Package className={`w-5 h-5 ${currentImageIndex === index ? 'text-primary/50' : 'text-muted-foreground/30'}`} />
+  1182→                  </button>
+  1183→                ))}
+  1184→              </div>
+  1185→            )}
+  1186→          </div>
+  1187→        </div>
+  1188→
+  1189→        {/* ============================================================ */}
+  1190→        {/* Related Products — Horizontal scroll carousel                */}
+  1191→        {/* ============================================================ */}
+  1192→        {relatedProducts.length > 0 && (
+  1193→          <RelatedProductsCarousel products={relatedProducts} />
+  1194→        )}
+  1195→      </div>
+  1196→
+  1197→      {/* ============================================================ */}
+  1198→      {/* MOBILE: Sticky CTAs above bottom nav                         */}
+  1199→      {/* ============================================================ */}
+  1200→      <div className="md:hidden fixed bottom-[calc(68px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-border/40 px-3 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+  1201→        <div className="flex items-center gap-2">
+  1202→          <motion.button
+  1203→            whileTap={{ scale: 0.97 }}
+  1204→            onClick={handleAddToCart}
+  1205→            disabled={addedToCart}
+  1206→            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-3 text-sm font-semibold rounded-xl transition-all min-h-[44px] ${
+  1207→              addedToCart
+  1208→                ? 'bg-secondary text-secondary-foreground'
+  1209→                : 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+  1210→            }`}
+  1211→          >
+  1212→            {addedToCart ? (
+  1213→              <><Check className="w-4 h-4" /> ¡Listo!</>
+  1214→            ) : (
+  1215→              <><ShoppingCart className="w-4 h-4" /> Agregar</>
+  1216→            )}
+  1217→          </motion.button>
+  1218→          <motion.button
+  1219→            whileTap={{ scale: 0.97 }}
+  1220→            onClick={handleWhatsApp}
+  1221→            className="flex items-center justify-center gap-1.5 px-3 py-3 bg-[#25D366] text-white text-sm font-semibold rounded-xl min-h-[44px] shadow-lg shadow-[#25D366]/20"
+  1222→          >
+  1223→            <MessageCircle className="w-4 h-4" />
+  1224→            <span>WhatsApp</span>
+  1225→          </motion.button>
+  1226→        </div>
+  1227→      </div>
+  1228→
+  1229→      <LightboxGallery product={product} isOpen={isLightboxOpen} onClose={() => setIsLightboxOpen(false)} />
+  1230→    </div>
+  1231→  );
+  1232→}

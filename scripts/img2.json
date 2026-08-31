@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "The image shows a mobile browser displaying a webpage from \"or-pack.vercel.app\" (the site is \"GUDSTOR PACK\"). There **is an error screen**—the page displays the message \"Algo salió mal\" (Something went wrong) with the text \"Ocurrió un error inesperado. Intenta recargar la página.\" (An unexpected error occurred. Try reloading the page). Two buttons are present: \"Reintentar\" (Retry) and \"Inicio\" (Home). The page also has a green chat button (\"S/ 12.22\") and a bottom navigation bar with tabs: \"Inicio\" (Home), \"Categorías\" (Categories), \"Favoritos\" (Favorites, with a notification badge), \"Buscar\" (Search), and \"Carrito\" (Cart, with a notification badge).  \n\nIn summary: This is an **error page** (likely a 500 or similar server/client error) on the GUDSTOR PACK website, prompting the user to retry or go to the home page.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1783723931,
+  "id": "20260711065208eaa5146d945245d0",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260711065208eaa5146d945245d0",
+  "usage": {
+    "completion_tokens": 218,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 994,
+    "prompt_tokens_details": {
+      "cached_tokens": 8
+    },
+    "total_tokens": 1212
+  }
+}

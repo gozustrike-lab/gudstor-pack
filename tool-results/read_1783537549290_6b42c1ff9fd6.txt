@@ -1,0 +1,987 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState, use, useCallback, useEffect, useRef } from 'react';
+     4→     4→import Link from 'next/link';
+     5→     5→import { useSearchParams } from 'next/navigation';
+     6→     6→import { motion, AnimatePresence } from 'framer-motion';
+     7→     7→import {
+     8→     8→  Package,
+     9→     9→  ShoppingCart,
+    10→    10→  ArrowLeft,
+    11→    11→  Truck,
+    12→    12→  Shield,
+    13→    13→  Check,
+    14→    14→  Heart,
+    15→    15→  MessageCircle,
+    16→    16→  ChevronRight,
+    17→    17→  Phone,
+    18→    18→  Box,
+    19→    19→  Layers,
+    20→    20→  Ruler,
+    21→    21→  CircleDot,
+    22→    22→  ShoppingBag,
+    23→    23→  LayoutGrid,
+    24→    24→  ChevronLeft,
+    25→    25→  ZoomIn,
+    26→    26→  ZoomOut,
+    27→    27→  X,
+    28→    28→} from 'lucide-react';
+    29→    29→import { useCartStore } from '@/lib/cart-store';
+    30→    30→import { useFavoritesStore } from '@/lib/favorites-store';
+    31→    31→import { formatPrice } from '@/lib/utils';
+    32→    32→import { COMPANY, buildProductMessage } from '@/config/company';
+    33→    33→import LightboxGallery from '@/components/lightbox-gallery';
+    34→    34→import products from '@/data/products.json';
+    35→    35→
+    36→    36→// Límite de 50 productos
+    37→    37→const visibleProducts = products.slice(0, 50);
+    38→    38→
+    39→    39→type TabKey = 'descripcion' | 'especificaciones' | 'envios';
+    40→    40→
+    41→    41→export default function ProductoDetalleClient({
+    42→    42→  params,
+    43→    43→}: {
+    44→    44→  params: Promise<{ id: string }>;
+    45→    45→}) {
+    46→    46→  const { id } = use(params);
+    47→    47→  const searchParams = useSearchParams();
+    48→    48→  const [quantity, setQuantity] = useState(1);
+    49→    49→  const [selectedMedida, setSelectedMedida] = useState('');
+    50→    50→  const [selectedColor, setSelectedColor] = useState('');
+    51→    51→  const [selectedPackIndex, setSelectedPackIndex] = useState(0);
+    52→    52→  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+    53→    53→  const [addedToCart, setAddedToCart] = useState(false);
+    54→    54→  const [heartActive, setHeartActive] = useState(false);
+    55→    55→  const [activeTab, setActiveTab] = useState<TabKey>('descripcion');
+    56→    56→  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    57→    57→  const [isZoomed, setIsZoomed] = useState(false);
+    58→    58→  const isFirstRender = useRef(true);
+    59→    59→
+    60→    60→  const addItem = useCartStore((s) => s.addItem);
+    61→    61→  const isFavorite = useFavoritesStore((s) => s.isFavorite(id));
+    62→    62→  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+    63→    63→
+    64→    64→  const product = visibleProducts.find((p) => p.id === id || p.slug === id);
+    65→    65→
+    66→    66→  // ── Deep linking: read pack + medida from URL on mount ──
+    67→    67→  useEffect(() => {
+    68→    68→    if (!product) return;
+    69→    69→    const packParam = searchParams.get('pack');
+    70→    70→    const medidaParam = searchParams.get('medida');
+    71→    71→    if (packParam) {
+    72→    72→      const idx = product.packs.findIndex((p) => String(p.cantidad) === packParam);
+    73→    73→      if (idx >= 0) setSelectedPackIndex(idx);
+    74→    74→    }
+    75→    75→    if (medidaParam) {
+    76→    76→      const decoded = decodeURIComponent(medidaParam);
+    77→    77→      if (product.medidas.includes(decoded)) {
+    78→    78→        setSelectedMedida(decoded);
+    79→    79→      }
+    80→    80→    }
+    81→    81→  }, [product, searchParams]);
+    82→    82→
+    83→    83→  // ── Sync pack + medida → URL query params ──
+    84→    84→  useEffect(() => {
+    85→    85→    if (!product || isFirstRender.current) {
+    86→    86→      if (isFirstRender.current) isFirstRender.current = false;
+    87→    87→      return;
+    88→    88→    }
+    89→    89→    if (typeof window === 'undefined') return;
+    90→    90→    const urlParams = new URLSearchParams();
+    91→    91→    const pack = product.packs[selectedPackIndex];
+    92→    92→    if (pack) urlParams.set('pack', String(pack.cantidad));
+    93→    93→    const medida = selectedMedida || product.medidas[0];
+    94→    94→    urlParams.set('medida', encodeURIComponent(medida));
+    95→    95→    const qs = urlParams.toString();
+    96→    96→    window.history.replaceState(null, '', `/productos/${id}?${qs}`);
+    97→    97→  }, [product, id, selectedPackIndex, selectedMedida]);
+    98→    98→
+    99→    99→  const selectedPack = product?.packs[selectedPackIndex] ?? null;
+   100→   100→
+   101→   101→  const handleAddToCart = useCallback(() => {
+   102→   102→    if (!product || !selectedPack) return;
+   103→   103→    addItem(
+   104→   104→      product,
+   105→   105→      quantity,
+   106→   106→      selectedMedida || product.medidas[0],
+   107→   107→      selectedColor || product.colores[0],
+   108→   108→      selectedPack.cantidad
+   109→   109→    );
+   110→   110→    setAddedToCart(true);
+   111→   111→    setTimeout(() => setAddedToCart(false), 2000);
+   112→   112→  }, [product, selectedPack, quantity, selectedMedida, selectedColor, addItem]);
+   113→   113→
+   114→   114→  const handleToggleFavorite = useCallback(() => {
+   115→   115→    if (!product || !selectedPack) return;
+   116→   116→    toggleFavorite(product, selectedPack.cantidad);
+   117→   117→    setHeartActive(true);
+   118→   118→    setTimeout(() => setHeartActive(false), 600);
+   119→   119→  }, [product, selectedPack, toggleFavorite]);
+   120→   120→
+   121→   121→  const handleWhatsApp = useCallback(() => {
+   122→   122→    if (!product || !selectedPack) return;
+   123→   123→    const medida = selectedMedida || product.medidas[0];
+   124→   124→    const color = selectedColor || product.colores[0];
+   125→   125→    const msg = [
+   126→   126→      'Hola GUDSTOR PACK 👋',
+   127→   127→      '',
+   128→   128→      'Deseo cotizar el siguiente producto:',
+   129→   129→      '',
+   130→   130→      `📦 ${product.nombre}`,
+   131→   131→      `📐 Medida: ${medida}`,
+   132→   132→      `🎨 Color: ${color}`,
+   133→   133→      `📦 Pack: ${selectedPack.cantidad} unidades`,
+   134→   134→      `💰 Precio: ${formatPrice(selectedPack.precio)}`,
+   135→   135→      `🔢 Cantidad: ${quantity} pack${quantity > 1 ? 's' : ''}`,
+   136→   136→      `💵 Total: ${formatPrice(selectedPack.precio * quantity)}`,
+   137→   137→      '',
+   138→   138→      'Gracias.',
+   139→   139→    ].join('\n');
+   140→   140→    window.open(`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+   141→   141→  }, [product, selectedPack, selectedMedida, selectedColor, quantity]);
+   142→   142→
+   143→   143→  if (!product) {
+   144→   144→    return (
+   145→   145→      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+   146→   146→        <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-4">
+   147→   147→          <Package className="w-8 h-8 text-muted-foreground" />
+   148→   148→        </div>
+   149→   149→        <h1 className="text-lg font-bold text-foreground mb-2">Producto no encontrado</h1>
+   150→   150→        <p className="text-muted-foreground mb-4 text-center text-sm">
+   151→   151→          El producto que buscas no existe o fue removido.
+   152→   152→        </p>
+   153→   153→        <Link
+   154→   154→          href="/productos"
+   155→   155→          className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-xl"
+   156→   156→        >
+   157→   157→          <ArrowLeft className="w-4 h-4" />
+   158→   158→          Volver al catálogo
+   159→   159→        </Link>
+   160→   160→      </div>
+   161→   161→    );
+   162→   162→  }
+   163→   163→
+   164→   164→  const relatedProducts = visibleProducts
+   165→   165→    .filter((p) => p.categoria === product.categoria && p.id !== product.id)
+   166→   166→    .slice(0, 4);
+   167→   167→
+   168→   168→  const tabs: { key: TabKey; label: string }[] = [
+   169→   169→    { key: 'descripcion', label: 'Descripción' },
+   170→   170→    { key: 'especificaciones', label: 'Especificaciones' },
+   171→   171→    { key: 'envios', label: 'Envíos' },
+   172→   172→  ];
+   173→   173→
+   174→   174→  // Shipping tiers
+   175→   175→  const shippingTiers = [
+   176→   176→    { min: 25, max: 49, label: '25 - 49 uds', info: 'Envío estándar' },
+   177→   177→    { min: 50, max: 99, label: '50 - 99 uds', info: 'Envío económico' },
+   178→   178→    { min: 100, max: 499, label: '100 - 499 uds', info: 'Envío mayorista' },
+   179→   179→    { min: 500, max: 999, label: '500 - 999 uds', info: 'Envío distribuidor' },
+   180→   180→    { min: 1000, max: null, label: '1,000+ uds', info: 'Envío industrial' },
+   181→   181→  ];
+   182→   182→
+   183→   183→  // Category navigation items
+   184→   184→  const categoryItems = [
+   185→   185→    { name: 'Cajas', href: '/productos?categoria=Cajas', icon: Box },
+   186→   186→    { name: 'Films', href: '/productos?categoria=Films', icon: Layers },
+   187→   187→    { name: 'Cintas', href: '/productos?categoria=Cintas', icon: Ruler },
+   188→   188→    { name: 'Protección', href: '/productos?categoria=Protección', icon: CircleDot },
+   189→   189→    { name: 'Bolsas', href: '/productos?categoria=Bolsas', icon: ShoppingBag },
+   190→   190→  ];
+   191→   191→
+   192→   192→  return (
+   193→   193→    <div className="min-h-screen pb-[120px] md:pb-0">
+   194→   194→      {/* ============================================================ */}
+   195→   195→      {/* MOBILE: Sticky top bar with back + title + favorite          */}
+   196→   196→      {/* ============================================================ */}
+   197→   197→      <div className="md:hidden sticky top-[56px] z-30 bg-white/90 backdrop-blur-md border-b border-border/30">
+   198→   198→        <div className="flex items-center justify-between px-3 h-11">
+   199→   199→          <Link href="/productos" className="flex items-center gap-1.5 text-sm font-medium text-foreground/80 active:text-primary">
+   200→   200→            <ArrowLeft className="w-4 h-4" />
+   201→   201→            <span className="max-w-[180px] truncate">{product.nombre}</span>
+   202→   202→          </Link>
+   203→   203→          <button
+   204→   204→            onClick={handleToggleFavorite}
+   205→   205→            className="p-2 active:bg-red-50 rounded-xl transition-colors"
+   206→   206→          >
+   207→   207→            <motion.div animate={heartActive ? { scale: [1, 1.4, 0.8, 1] } : { scale: 1 }} transition={{ duration: 0.4 }}>
+   208→   208→              <Heart className={`w-5 h-5 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-foreground/30'}`} />
+   209→   209→            </motion.div>
+   210→   210→          </button>
+   211→   211→        </div>
+   212→   212→      </div>
+   213→   213→
+   214→   214→      {/* DESKTOP Breadcrumb */}
+   215→   215→      <div className="hidden md:block bg-muted/30 border-b border-border/50">
+   216→   216→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+   217→   217→          <nav className="flex items-center gap-1.5 text-xs text-muted-foreground overflow-x-auto">
+   218→   218→            <Link href="/" className="hover:text-primary transition-colors shrink-0">Inicio</Link>
+   219→   219→            <ChevronRight className="w-3 h-3 shrink-0" />
+   220→   220→            <Link href="/productos" className="hover:text-primary transition-colors shrink-0">Productos</Link>
+   221→   221→            <ChevronRight className="w-3 h-3 shrink-0" />
+   222→   222→            <Link href={`/productos?categoria=${encodeURIComponent(product.categoria)}`} className="hover:text-primary transition-colors shrink-0">
+   223→   223→              {product.categoria}
+   224→   224→            </Link>
+   225→   225→            <ChevronRight className="w-3 h-3 shrink-0" />
+   226→   226→            <span className="text-foreground font-medium truncate">{product.nombre}</span>
+   227→   227→          </nav>
+   228→   228→        </div>
+   229→   229→      </div>
+   230→   230→
+   231→   231→      {/* ============================================================ */}
+   232→   232→      {/* MAIN CONTENT — Mobile-First Single Column Layout             */}
+   233→   233→      {/* ============================================================ */}
+   234→   234→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+   235→   235→
+   236→   236→        {/* ── MOBILE: Horizontal category strip ── */}
+   237→   237→        <nav className="md:hidden mb-4 -mx-4 px-4">
+   238→   238→          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+   239→   239→            {categoryItems.map((cat) => {
+   240→   240→              const isActive = cat.name === product.categoria;
+   241→   241→              const CatIcon = cat.icon;
+   242→   242→              return (
+   243→   243→                <Link
+   244→   244→                  key={cat.name}
+   245→   245→                  href={cat.href}
+   246→   246→                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-all shrink-0 ${
+   247→   247→                    isActive
+   248→   248→                      ? 'bg-primary text-primary-foreground'
+   249→   249→                      : 'text-foreground/60 bg-muted/50 border border-border/50'
+   250→   250→                  }`}
+   251→   251→                >
+   252→   252→                  <CatIcon className="w-3 h-3" />
+   253→   253→                  {cat.name}
+   254→   254→                </Link>
+   255→   255→              );
+   256→   256→            })}
+   257→   257→          </div>
+   258→   258→        </nav>
+   259→   259→
+   260→   260→        {/* ── Desktop: 3-column layout ── */}
+   261→   261→        <div className="hidden lg:grid lg:grid-cols-[220px_1fr_1fr] gap-6">
+   262→   262→
+   263→   263→          {/* LEFT SIDEBAR — Vertical Category Navigation */}
+   264→   264→          <aside>
+   265→   265→            <div className="sticky top-[96px] bg-card border border-border/60 rounded-2xl p-4">
+   266→   266→              <div className="flex items-center gap-2 mb-3">
+   267→   267→                <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
+   268→   268→                  <LayoutGrid className="w-3.5 h-3.5 text-primary" />
+   269→   269→                </div>
+   270→   270→                <span className="text-xs font-bold uppercase tracking-wider text-foreground">Categorías</span>
+   271→   271→              </div>
+   272→   272→              <div className="space-y-1">
+   273→   273→                {[
+   274→   274→                  { name: 'Todos', href: '/productos', icon: LayoutGrid, activeClass: 'bg-primary text-primary-foreground', hoverClass: 'hover:bg-muted/60' },
+   275→   275→                  { name: 'Cajas', href: '/productos?categoria=Cajas', icon: Box, activeClass: 'bg-amber-500/10 text-amber-700 border-l-2 border-amber-500', hoverClass: 'hover:bg-amber-500/5' },
+   276→   276→                  { name: 'Films', href: '/productos?categoria=Films', icon: Layers, activeClass: 'bg-teal-500/10 text-teal-700 border-l-2 border-teal-500', hoverClass: 'hover:bg-teal-500/5' },
+   277→   277→                  { name: 'Cintas', href: '/productos?categoria=Cintas', icon: Ruler, activeClass: 'bg-blue-500/10 text-blue-700 border-l-2 border-blue-500', hoverClass: 'hover:bg-blue-500/5' },
+   278→   278→                  { name: 'Protección', href: '/productos?categoria=Protección', icon: CircleDot, activeClass: 'bg-purple-500/10 text-purple-700 border-l-2 border-purple-500', hoverClass: 'hover:bg-purple-500/5' },
+   279→   279→                  { name: 'Bolsas', href: '/productos?categoria=Bolsas', icon: ShoppingBag, activeClass: 'bg-green-500/10 text-green-700 border-l-2 border-green-500', hoverClass: 'hover:bg-green-500/5' },
+   280→   280→                ].map((cat) => {
+   281→   281→                  const isActive = cat.name === 'Todos' ? false : cat.name === product.categoria;
+   282→   282→                  const CatIcon = cat.icon;
+   283→   283→                  return (
+   284→   284→                    <Link
+   285→   285→                      key={cat.name}
+   286→   286→                      href={cat.href}
+   287→   287→                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+   288→   288→                        isActive ? cat.activeClass : `text-foreground/70 ${cat.hoverClass}`
+   289→   289→                      }`}
+   290→   290→                    >
+   291→   291→                      <CatIcon className={`w-4 h-4 shrink-0 ${isActive ? '' : 'text-muted-foreground/60'}`} />
+   292→   292→                      <span>{cat.name}</span>
+   293→   293→                    </Link>
+   294→   294→                  );
+   295→   295→                })}
+   296→   296→              </div>
+   297→   297→            </div>
+   298→   298→          </aside>
+   299→   299→
+   300→   300→          {/* IMAGE SECTION — Desktop */}
+   301→   301→          <motion.div
+   302→   302→            initial={{ opacity: 0, x: -20 }}
+   303→   303→            animate={{ opacity: 1, x: 0 }}
+   304→   304→            transition={{ duration: 0.3 }}
+   305→   305→            className="lg:sticky lg:top-[96px] lg:self-start"
+   306→   306→          >
+   307→   307→            <button
+   308→   308→              onClick={() => setIsLightboxOpen(true)}
+   309→   309→              className="relative w-full min-h-[450px] xl:min-h-[560px] bg-gradient-to-br from-primary/5 via-muted to-secondary/5 rounded-2xl border border-border/50 overflow-hidden cursor-zoom-in group"
+   310→   310→            >
+   311→   311→              <div className="absolute inset-0 flex items-center justify-center">
+   312→   312→                <div className="w-32 h-32 bg-gradient-to-br from-primary/15 to-secondary/15 rounded-3xl flex items-center justify-center">
+   313→   313→                  <Package className="w-16 h-16 text-primary/50" />
+   314→   314→                </div>
+   315→   315→              </div>
+   316→   316→              <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-3 py-1.5 bg-black/20 backdrop-blur-sm text-white text-xs rounded-lg">
+   317→   317→                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+   318→   318→                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+   319→   319→                </svg>
+   320→   320→                Toca para ampliar
+   321→   321→              </div>
+   322→   322→            </button>
+   323→   323→            <div className="flex gap-2 mt-3">
+   324→   324→              {product.imagenes.map((_, index) => (
+   325→   325→                <button
+   326→   326→                  key={index}
+   327→   327→                  onClick={() => setIsLightboxOpen(true)}
+   328→   328→                  className="w-16 h-16 bg-gradient-to-br from-muted to-muted/50 rounded-xl border border-border/50 hover:border-primary/30 flex items-center justify-center transition-colors"
+   329→   329→                >
+   330→   330→                  <Package className="w-6 h-6 text-primary/30" />
+   331→   331→                </button>
+   332→   332→              ))}
+   333→   333→            </div>
+   334→   334→          </motion.div>
+   335→   335→
+   336→   336→          {/* PRODUCT INFO — Desktop */}
+   337→   337→          <motion.div
+   338→   338→            initial={{ opacity: 0, x: 20 }}
+   339→   339→            animate={{ opacity: 1, x: 0 }}
+   340→   340→            transition={{ duration: 0.3, delay: 0.1 }}
+   341→   341→            className="space-y-5"
+   342→   342→          >
+   343→   343→            {/* Desktop Title + Tags */}
+   344→   344→            <div>
+   345→   345→              <div className="flex items-start justify-between">
+   346→   346→                <div className="flex-1 min-w-0">
+   347→   347→                  <div className="flex flex-wrap gap-2 mb-3">
+   348→   348→                    {product.etiquetas.map((etiqueta) => (
+   349→   349→                      <span key={etiqueta} className="px-3 py-1 text-xs font-medium text-primary bg-primary/8 rounded-lg">{etiqueta}</span>
+   350→   350→                    ))}
+   351→   351→                  </div>
+   352→   352→                  <h1 className="text-2xl xl:text-3xl font-extrabold text-foreground leading-tight">{product.nombre}</h1>
+   353→   353→                  <p className="text-sm text-muted-foreground mt-1">{product.material} · {product.categoria}</p>
+   354→   354→                </div>
+   355→   355→                <motion.button whileTap={{ scale: 0.7 }} onClick={handleToggleFavorite}
+   356→   356→                  className="ml-3 p-3 rounded-xl border border-border/50 hover:border-red-200 hover:bg-red-50 transition-all shrink-0">
+   357→   357→                  <motion.div animate={heartActive ? { scale: [1, 1.4, 0.8, 1.15, 1], rotate: [0, -10, 10, -5, 0] } : { scale: 1 }}>
+   358→   358→                    <Heart className={`w-6 h-6 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-foreground/30'}`} />
+   359→   359→                  </motion.div>
+   360→   360→                </motion.button>
+   361→   361→              </div>
+   362→   362→            </div>
+   363→   363→
+   364→   364→            {/* Description */}
+   365→   365→            <div className="bg-muted/30 rounded-xl p-4">
+   366→   366→              <p className="text-sm text-muted-foreground leading-relaxed">
+   367→   367→                {product.descripcion}
+   368→   368→              </p>
+   369→   369→            </div>
+   370→   370→
+   371→   371→            {/* Price Display */}
+   372→   372→            <div className="bg-primary/5 rounded-xl p-4 border border-primary/10">
+   373→   373→              <p className="text-sm text-muted-foreground line-through">
+   374→   374→                {formatPrice(product.precio * (selectedPack?.cantidad || 25))}
+   375→   375→              </p>
+   376→   376→              <div className="flex items-end gap-2">
+   377→   377→                <span className="text-3xl xl:text-4xl font-extrabold text-green-600">
+   378→   378→                  {formatPrice(selectedPack?.precio || 0)}
+   379→   379→                </span>
+   380→   380→                <span className="text-xs text-muted-foreground mb-1">/ {selectedPack?.cantidad} uds</span>
+   381→   381→              </div>
+   382→   382→              <p className="text-xs text-muted-foreground mt-1">
+   383→   383→                Ahorras {formatPrice((product.precio * (selectedPack?.cantidad || 25)) - (selectedPack?.precio || 0))} comprando {selectedPack?.cantidad} unidades
+   384→   384→                {selectedPack && selectedPack.descuento > 0 && (
+   385→   385→                  <span className="ml-1.5 inline-block px-1.5 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 rounded-md">
+   386→   386→                    -{selectedPack.descuento}%
+   387→   387→                  </span>
+   388→   388→                )}
+   389→   389→              </p>
+   390→   390→            </div>
+   391→   391→
+   392→   392→            {/* Pack Selector */}
+   393→   393→            <div>
+   394→   394→              <h3 className="text-sm font-semibold text-foreground mb-2">Elige tu Pack</h3>
+   395→   395→              <div className="grid grid-cols-3 gap-3">
+   396→   396→                {product.packs.map((pack, i) => {
+   397→   397→                  const originalPrice = product.precio * pack.cantidad;
+   398→   398→                  const isSelected = selectedPackIndex === i;
+   399→   399→                  return (
+   400→   400→                    <motion.button
+   401→   401→                      key={pack.cantidad}
+   402→   402→                      whileTap={{ scale: 0.97 }}
+   403→   403→                      onClick={() => setSelectedPackIndex(i)}
+   404→   404→                      className={`relative p-3 rounded-xl border-2 transition-all text-center ${
+   405→   405→                        isSelected
+   406→   406→                          ? 'border-primary bg-primary/5 shadow-md shadow-primary/10'
+   407→   407→                          : 'border-border hover:border-primary/30'
+   408→   408→                      }`}
+   409→   409→                    >
+   410→   410→                      <p className="text-xs text-muted-foreground line-through">
+   411→   411→                        {formatPrice(originalPrice)}
+   412→   412→                      </p>
+   413→   413→                      <p className="text-base font-extrabold text-green-600">
+   414→   414→                        {formatPrice(pack.precio)}
+   415→   415→                      </p>
+   416→   416→                      <div className="flex items-center justify-center gap-1.5 mt-0.5">
+   417→   417→                        <p className="text-[10px] text-foreground/70 uppercase font-medium">
+   418→   418→                          {pack.cantidad} UDS
+   419→   419→                        </p>
+   420→   420→                        {pack.descuento > 0 && (
+   421→   421→                          <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 rounded-md">
+   422→   422→                            -{pack.descuento}%
+   423→   423→                          </span>
+   424→   424→                        )}
+   425→   425→                      </div>
+   426→   426→                    </motion.button>
+   427→   427→                  );
+   428→   428→                })}
+   429→   429→              </div>
+   430→   430→            </div>
+   431→   431→
+   432→   432→            {/* Color & Size */}
+   433→   433→            <div className="flex gap-4">
+   434→   434→              <div className="flex-1">
+   435→   435→                <h3 className="text-sm font-semibold text-foreground mb-2">Color</h3>
+   436→   436→                <div className="flex flex-wrap gap-1.5">
+   437→   437→                  {product.colores.map((color) => (
+   438→   438→                    <button key={color} onClick={() => setSelectedColor(color)}
+   439→   439→                      className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all min-h-[36px] ${
+   440→   440→                        selectedColor === color || (!selectedColor && product.colores[0] === color)
+   441→   441→                          ? 'border-primary bg-primary/10 text-primary'
+   442→   442→                          : 'border-border text-foreground/70'
+   443→   443→                      }`}
+   444→   444→                    >{color}</button>
+   445→   445→                  ))}
+   446→   446→                </div>
+   447→   447→              </div>
+   448→   448→              <div className="flex-1">
+   449→   449→                <h3 className="text-sm font-semibold text-foreground mb-2">Medida</h3>
+   450→   450→                <div className="flex flex-wrap gap-1.5">
+   451→   451→                  {product.medidas.map((medida) => (
+   452→   452→                    <button key={medida} onClick={() => setSelectedMedida(medida)}
+   453→   453→                      className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all min-h-[36px] ${
+   454→   454→                        selectedMedida === medida || (!selectedMedida && product.medidas[0] === medida)
+   455→   455→                          ? 'border-primary bg-primary/10 text-primary'
+   456→   456→                          : 'border-border text-foreground/70'
+   457→   457→                      }`}
+   458→   458→                    >{medida}</button>
+   459→   459→                  ))}
+   460→   460→                </div>
+   461→   461→              </div>
+   462→   462→            </div>
+   463→   463→
+   464→   464→            {/* WhatsApp CTA */}
+   465→   465→            <div className="bg-gradient-to-br from-[#25D366]/5 to-[#25D366]/10 border border-[#25D366]/20 rounded-2xl p-5">
+   466→   466→              <div className="flex items-center gap-3 mb-3">
+   467→   467→                <div className="w-10 h-10 bg-[#25D366] rounded-xl flex items-center justify-center shrink-0">
+   468→   468→                  <MessageCircle className="w-5 h-5 text-white" />
+   469→   469→                </div>
+   470→   470→                <div>
+   471→   471→                  <h3 className="text-sm font-bold text-foreground">¿Necesitas ayuda o cotización personalizada?</h3>
+   472→   472→                  <p className="text-xs text-muted-foreground">Escríbenos y te respondemos al instante</p>
+   473→   473→                </div>
+   474→   474→              </div>
+   475→   475→              <a
+   476→   476→                href={`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(buildProductMessage({
+   477→   477→                  nombre: product.nombre,
+   478→   478→                  packCantidad: selectedPack?.cantidad || 25,
+   479→   479→                  packPrecio: formatPrice(selectedPack?.precio || 0),
+   480→   480→                }))}`}
+   481→   481→                target="_blank"
+   482→   482→                rel="noopener noreferrer"
+   483→   483→              >
+   484→   484→                <motion.button
+   485→   485→                  whileHover={{ scale: 1.02 }}
+   486→   486→                  whileTap={{ scale: 0.98 }}
+   487→   487→                  className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-[#25D366] text-white font-semibold rounded-xl shadow-lg shadow-[#25D366]/20 hover:shadow-xl transition-shadow"
+   488→   488→                >
+   489→   489→                  <MessageCircle className="w-5 h-5" />
+   490→   490→                  Cotizar por WhatsApp
+   491→   491→                </motion.button>
+   492→   492→              </a>
+   493→   493→            </div>
+   494→   494→
+   495→   495→            {/* Desktop Add to Cart */}
+   496→   496→            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleAddToCart}
+   497→   497→              className={`w-full flex items-center justify-center gap-2 px-6 py-4 font-semibold rounded-xl shadow-lg transition-all ${
+   498→   498→                addedToCart ? 'bg-secondary text-secondary-foreground' : 'bg-primary text-primary-foreground shadow-primary/20'
+   499→   499→              }`}>
+   500→   500→              {addedToCart ? <><Check className="w-5 h-5" /> ¡Agregado!</> : <><ShoppingCart className="w-5 h-5" /> Agregar al Carrito</>}
+   501→   501→            </motion.button>
+   502→   502→
+   503→   503→            {/* TABS */}
+   504→   504→            <div>
+   505→   505→              <div className="flex border-b border-border/50 overflow-x-auto">
+   506→   506→                {tabs.map((tab) => (
+   507→   507→                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+   508→   508→                    className={`relative px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors min-h-[44px] ${
+   509→   509→                      activeTab === tab.key ? 'text-primary' : 'text-muted-foreground'
+   510→   510→                    }`}>
+   511→   511→                    {tab.label}
+   512→   512→                    {activeTab === tab.key && (
+   513→   513→                      <motion.div layoutId="tab-underline-d" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+   514→   514→                    )}
+   515→   515→                  </button>
+   516→   516→                ))}
+   517→   517→              </div>
+   518→   518→
+   519→   519→              <AnimatePresence mode="wait">
+   520→   520→                <motion.div key={activeTab} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }} className="py-4">
+   521→   521→                  {activeTab === 'descripcion' && (
+   522→   522→                    <div className="space-y-3">
+   523→   523→                      <p className="text-sm text-muted-foreground leading-relaxed">
+   524→   524→                        Producto ideal para uso en ecommerce, tiendas por departamento y logística empresarial.
+   525→   525→                        Diseñado para proteger tus mercancías durante el transporte y almacenamiento.
+   526→   526→                        Fabricado con materiales de alta calidad que cumplen con los estándares internacionales de embalaje.
+   527→   527→                      </p>
+   528→   528→                      <p className="text-sm text-muted-foreground leading-relaxed">
+   529→   529→                        {product.descripcion}
+   530→   530→                      </p>
+   531→   531→                    </div>
+   532→   532→                  )}
+   533→   533→                  {activeTab === 'especificaciones' && (
+   534→   534→                    <div className="space-y-2">
+   535→   535→                      {[
+   536→   536→                        ['Material', product.material],
+   537→   537→                        ['Categoría', product.categoria],
+   538→   538→                        ['Medidas disponibles', product.medidas.join(', ')],
+   539→   539→                        ['Colores disponibles', product.colores.join(', ')],
+   540→   540→                        ['Packs disponibles', product.packs.map(p => `${p.cantidad} uds (-${p.descuento}%)`).join(', ')],
+   541→   541→                      ].map(([label, value]) => (
+   542→   542→                        <div key={label} className="flex justify-between py-2.5 border-b border-border/30 text-sm">
+   543→   543→                          <span className="text-muted-foreground">{label}</span>
+   544→   544→                          <span className="font-medium text-foreground text-right ml-4">{value}</span>
+   545→   545→                        </div>
+   546→   546→                      ))}
+   547→   547→                    </div>
+   548→   548→                  )}
+   549→   549→                  {activeTab === 'envios' && (
+   550→   550→                    <div className="space-y-5">
+   551→   551→                      <div>
+   552→   552→                        <h4 className="text-sm font-bold text-foreground mb-3">Envíos a Todo el Perú</h4>
+   553→   553→                        <div className="bg-primary/5 rounded-xl border border-primary/10 overflow-hidden">
+   554→   554→                          <table className="w-full text-sm">
+   555→   555→                            <thead>
+   556→   556→                              <tr className="border-b border-primary/10">
+   557→   557→                                <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase">Cantidad</th>
+   558→   558→                                <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase">Tipo de Envío</th>
+   559→   559→                              </tr>
+   560→   560→                            </thead>
+   561→   561→                            <tbody>
+   562→   562→                              {shippingTiers.map((tier) => (
+   563→   563→                                <tr key={tier.label} className="border-b border-primary/5 last:border-0">
+   564→   564→                                  <td className="px-4 py-2 font-medium text-foreground">{tier.label}</td>
+   565→   565→                                  <td className="px-4 py-2 text-muted-foreground">{tier.info}</td>
+   566→   566→                                </tr>
+   567→   567→                              ))}
+   568→   568→                            </tbody>
+   569→   569→                          </table>
+   570→   570→                        </div>
+   571→   571→                      </div>
+   572→   572→                      <div className="space-y-3">
+   573→   573→                        {[
+   574→   574→                          { icon: Truck, title: 'Despacho en 24h', desc: 'Pedidos realizados antes de las 2pm se despachan el mismo día para Lima Metropolitana. Envíos a provincias en 48-72 horas hábiles.' },
+   575→   575→                          { icon: Shield, title: 'Envío Seguro', desc: 'Todos nuestros paquetes incluyen protección adicional contra golpes y manipulación durante el transporte.' },
+   576→   576→                          { icon: Phone, title: 'Seguimiento de tu pedido', desc: 'Recibe notificaciones por WhatsApp con el estado de tu envío y coordenadas de delivery en tiempo real.' },
+   577→   577→                        ].map(({ icon: Icon, title, desc }) => (
+   578→   578→                          <div key={title} className="flex gap-3">
+   579→   579→                            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+   580→   580→                              <Icon className="w-5 h-5 text-primary" />
+   581→   581→                            </div>
+   582→   582→                            <div>
+   583→   583→                              <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+   584→   584→                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{desc}</p>
+   585→   585→                            </div>
+   586→   586→                          </div>
+   587→   587→                        ))}
+   588→   588→                      </div>
+   589→   589→                    </div>
+   590→   590→                  )}
+   591→   591→                </motion.div>
+   592→   592→              </AnimatePresence>
+   593→   593→            </div>
+   594→   594→
+   595→   595→            {/* Desktop benefits */}
+   596→   596→            <div className="grid grid-cols-2 gap-3">
+   597→   597→              {[
+   598→   598→                { icon: Truck, label: 'Envío Rápido' },
+   599→   599→                { icon: Shield, label: 'Garantía de Calidad' },
+   600→   600→              ].map((item) => (
+   601→   601→                <div key={item.label} className="flex flex-col items-center gap-1.5 p-3 bg-muted/30 rounded-xl text-center">
+   602→   602→                  <item.icon className="w-5 h-5 text-primary" />
+   603→   603→                  <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+   604→   604→                </div>
+   605→   605→              ))}
+   606→   606→            </div>
+   607→   607→          </motion.div>
+   608→   608→        </div>
+   609→   609→
+   610→   610→        {/* ============================================================ */}
+   611→   611→        {/* MOBILE: Single-column layout (visible below md)              */}
+   612→   612→        {/* ============================================================ */}
+   613→   613→        <div className="lg:hidden space-y-4">
+   614→   614→
+   615→   615→          {/* ── Mobile Image Gallery ── */}
+   616→   616→          <div className="space-y-2">
+   617→   617→            {/* Main Image */}
+   618→   618→            <motion.div
+   619→   619→              initial={{ opacity: 0 }}
+   620→   620→              animate={{ opacity: 1 }}
+   621→   621→              transition={{ duration: 0.3 }}
+   622→   622→              className="relative w-full aspect-square max-h-[60vh] bg-gradient-to-br from-primary/5 via-muted to-secondary/5 rounded-2xl border border-border/50 overflow-hidden"
+   623→   623→            >
+   624→   624→              {/* Nav Arrows */}
+   625→   625→              {product.imagenes.length > 1 && (
+   626→   626→                <>
+   627→   627→                  <button
+   628→   628→                    onClick={(e) => {
+   629→   629→                      e.stopPropagation();
+   630→   630→                      setCurrentImageIndex((prev) => (prev - 1 + product.imagenes.length) % product.imagenes.length);
+   631→   631→                      setIsZoomed(false);
+   632→   632→                    }}
+   633→   633→                    className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/70 backdrop-blur-sm rounded-full shadow-sm active:bg-white/90 transition-colors"
+   634→   634→                  >
+   635→   635→                    <ChevronLeft className="w-5 h-5 text-foreground/70" />
+   636→   636→                  </button>
+   637→   637→                  <button
+   638→   638→                    onClick={(e) => {
+   639→   639→                      e.stopPropagation();
+   640→   640→                      setCurrentImageIndex((prev) => (prev + 1) % product.imagenes.length);
+   641→   641→                      setIsZoomed(false);
+   642→   642→                    }}
+   643→   643→                    className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/70 backdrop-blur-sm rounded-full shadow-sm active:bg-white/90 transition-colors"
+   644→   644→                  >
+   645→   645→                    <ChevronRight className="w-5 h-5 text-foreground/70" />
+   646→   646→                  </button>
+   647→   647→                </>
+   648→   648→              )}
+   649→   649→
+   650→   650→              {/* Image counter badge */}
+   651→   651→              <div className="absolute top-2 right-2 z-10 px-2 py-1 bg-black/30 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
+   652→   652→                {currentImageIndex + 1}/{product.imagenes.length}
+   653→   653→              </div>
+   654→   654→
+   655→   655→              {/* Placeholder content */}
+   656→   656→              <div
+   657→   657→                className="absolute inset-0 flex items-center justify-center cursor-zoom-in"
+   658→   658→                onClick={() => setIsLightboxOpen(true)}
+   659→   659→              >
+   660→   660→                <div className={`flex items-center justify-center transition-all duration-300 ${
+   661→   661→                  isZoomed ? 'w-32 h-32' : 'w-24 h-24'
+   662→   662→                }`}>
+   663→   663→                  <div className="w-full h-full bg-gradient-to-br from-primary/15 to-secondary/15 rounded-3xl flex items-center justify-center">
+   664→   664→                    <Package className="w-12 h-12 text-primary/50" />
+   665→   665→                  </div>
+   666→   666→                </div>
+   667→   667→              </div>
+   668→   668→
+   669→   669→              {/* Tap to expand */}
+   670→   670→              <button
+   671→   671→                onClick={() => setIsLightboxOpen(true)}
+   672→   672→                className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-black/30 backdrop-blur-sm text-white text-[11px] rounded-lg active:bg-black/40 transition-colors"
+   673→   673→              >
+   674→   674→                <ZoomIn className="w-3.5 h-3.5" />
+   675→   675→                Ampliar
+   676→   676→              </button>
+   677→   677→            </motion.div>
+   678→   678→
+   679→   679→            {/* Thumbnail Strip */}
+   680→   680→            {product.imagenes.length > 1 && (
+   681→   681→              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+   682→   682→                {product.imagenes.map((_, index) => (
+   683→   683→                  <button
+   684→   684→                    key={index}
+   685→   685→                    onClick={() => { setCurrentImageIndex(index); setIsZoomed(false); }}
+   686→   686→                    className={`shrink-0 w-16 h-16 rounded-xl border-2 overflow-hidden transition-all flex items-center justify-center ${
+   687→   687→                      currentImageIndex === index
+   688→   688→                        ? 'border-primary bg-primary/5 shadow-sm'
+   689→   689→                        : 'border-border/50 bg-muted/30'
+   690→   690→                    }`}
+   691→   691→                  >
+   692→   692→                    <Package className={`w-6 h-6 ${currentImageIndex === index ? 'text-primary/50' : 'text-muted-foreground/30'}`} />
+   693→   693→                  </button>
+   694→   694→                ))}
+   695→   695→              </div>
+   696→   696→            )}
+   697→   697→          </div>
+   698→   698→
+   699→   699→          {/* ── Mobile Product Info ── */}
+   700→   700→          <motion.div
+   701→   701→            initial={{ opacity: 0, y: 10 }}
+   702→   702→            animate={{ opacity: 1, y: 0 }}
+   703→   703→            transition={{ duration: 0.3, delay: 0.1 }}
+   704→   704→            className="space-y-3"
+   705→   705→          >
+   706→   706→            {/* Tags + Title */}
+   707→   707→            <div>
+   708→   708→              <div className="flex flex-wrap gap-1.5 mb-1.5">
+   709→   709→                {product.etiquetas.slice(0, 3).map((etiqueta) => (
+   710→   710→                  <span key={etiqueta} className="px-2 py-0.5 text-[10px] font-medium text-primary bg-primary/8 rounded-md">{etiqueta}</span>
+   711→   711→                ))}
+   712→   712→                <span className="px-2 py-0.5 text-[10px] font-medium text-muted-foreground bg-muted/50 rounded-md">{product.categoria}</span>
+   713→   713→              </div>
+   714→   714→              <h1 className="text-lg font-bold text-foreground leading-tight">{product.nombre}</h1>
+   715→   715→              <p className="text-xs text-muted-foreground mt-0.5">{product.material}</p>
+   716→   716→            </div>
+   717→   717→
+   718→   718→            {/* Price */}
+   719→   719→            <div className="bg-primary/5 rounded-xl p-3 border border-primary/10">
+   720→   720→              <p className="text-xs text-muted-foreground line-through">
+   721→   721→                {formatPrice(product.precio * (selectedPack?.cantidad || 25))}
+   722→   722→              </p>
+   723→   723→              <div className="flex items-end gap-2">
+   724→   724→                <span className="text-2xl font-extrabold text-green-600">
+   725→   725→                  {formatPrice(selectedPack?.precio || 0)}
+   726→   726→                </span>
+   727→   727→                <span className="text-[11px] text-muted-foreground mb-0.5">/ {selectedPack?.cantidad} uds</span>
+   728→   728→              </div>
+   729→   729→              <p className="text-[11px] text-muted-foreground mt-0.5">
+   730→   730→                Ahorras {formatPrice((product.precio * (selectedPack?.cantidad || 25)) - (selectedPack?.precio || 0))}
+   731→   731→                {selectedPack && selectedPack.descuento > 0 && (
+   732→   732→                  <span className="ml-1.5 inline-block px-1.5 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 rounded-md">
+   733→   733→                    -{selectedPack.descuento}%
+   734→   734→                  </span>
+   735→   735→                )}
+   736→   736→              </p>
+   737→   737→            </div>
+   738→   738→
+   739→   739→            {/* Pack Selector — compact for mobile */}
+   740→   740→            <div>
+   741→   741→              <h3 className="text-xs font-semibold text-foreground mb-2">Elige tu Pack</h3>
+   742→   742→              <div className="grid grid-cols-3 gap-1.5">
+   743→   743→                {product.packs.map((pack, i) => {
+   744→   744→                  const isSelected = selectedPackIndex === i;
+   745→   745→                  return (
+   746→   746→                    <motion.button
+   747→   747→                      key={pack.cantidad}
+   748→   748→                      whileTap={{ scale: 0.97 }}
+   749→   749→                      onClick={() => setSelectedPackIndex(i)}
+   750→   750→                      className={`p-2 rounded-xl border-2 transition-all text-center ${
+   751→   751→                        isSelected
+   752→   752→                          ? 'border-primary bg-primary/5 shadow-sm'
+   753→   753→                          : 'border-border'
+   754→   754→                      }`}
+   755→   755→                    >
+   756→   756→                      <p className="text-[10px] text-muted-foreground line-through">
+   757→   757→                        {formatPrice(product.precio * pack.cantidad)}
+   758→   758→                      </p>
+   759→   759→                      <p className="text-sm font-extrabold text-green-600">{formatPrice(pack.precio)}</p>
+   760→   760→                      <div className="flex items-center justify-center gap-1 mt-0.5">
+   761→   761→                        <span className="text-[9px] text-foreground/70 uppercase font-medium">{pack.cantidad} UDS</span>
+   762→   762→                        {pack.descuento > 0 && (
+   763→   763→                          <span className="text-[9px] font-bold text-green-600">-{pack.descuento}%</span>
+   764→   764→                        )}
+   765→   765→                      </div>
+   766→   766→                    </motion.button>
+   767→   767→                  );
+   768→   768→                })}
+   769→   769→              </div>
+   770→   770→            </div>
+   771→   771→
+   772→   772→            {/* Color & Medida — stacked on mobile */}
+   773→   773→            <div className="space-y-3">
+   774→   774→              <div>
+   775→   775→                <h3 className="text-xs font-semibold text-foreground mb-1.5">Color</h3>
+   776→   776→                <div className="flex flex-wrap gap-1.5">
+   777→   777→                  {product.colores.map((color) => (
+   778→   778→                    <button key={color} onClick={() => setSelectedColor(color)}
+   779→   779→                      className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all ${
+   780→   780→                        selectedColor === color || (!selectedColor && product.colores[0] === color)
+   781→   781→                          ? 'border-primary bg-primary/10 text-primary'
+   782→   782→                          : 'border-border text-foreground/70'
+   783→   783→                      }`
+   784→   784→                    }>{color}</button>
+   785→   785→                  ))}
+   786→   786→                </div>
+   787→   787→              </div>
+   788→   788→              <div>
+   789→   789→                <h3 className="text-xs font-semibold text-foreground mb-1.5">Medida</h3>
+   790→   790→                <div className="flex flex-wrap gap-1.5">
+   791→   791→                  {product.medidas.map((medida) => (
+   792→   792→                    <button key={medida} onClick={() => setSelectedMedida(medida)}
+   793→   793→                      className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all ${
+   794→   794→                        selectedMedida === medida || (!selectedMedida && product.medidas[0] === medida)
+   795→   795→                          ? 'border-primary bg-primary/10 text-primary'
+   796→   796→                          : 'border-border text-foreground/70'
+   797→   797→                      }`
+   798→   798→                    }>{medida}</button>
+   799→   799→                  ))}
+   800→   800→                </div>
+   801→   801→              </div>
+   802→   802→            </div>
+   803→   803→
+   804→   804→            {/* WhatsApp CTA — Mobile compact */}
+   805→   805→            <div className="bg-gradient-to-br from-[#25D366]/5 to-[#25D366]/10 border border-[#25D366]/20 rounded-xl p-3">
+   806→   806→              <div className="flex items-center gap-2.5 mb-2.5">
+   807→   807→                <div className="w-8 h-8 bg-[#25D366] rounded-lg flex items-center justify-center shrink-0">
+   808→   808→                  <MessageCircle className="w-4 h-4 text-white" />
+   809→   809→                </div>
+   810→   810→                <div className="min-w-0">
+   811→   811→                  <h3 className="text-xs font-bold text-foreground">¿Necesitas cotización personalizada?</h3>
+   812→   812→                </div>
+   813→   813→              </div>
+   814→   814→              <a
+   815→   815→                href={`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(buildProductMessage({
+   816→   816→                  nombre: product.nombre,
+   817→   817→                  packCantidad: selectedPack?.cantidad || 25,
+   818→   818→                  packPrecio: formatPrice(selectedPack?.precio || 0),
+   819→   819→                }))}`}
+   820→   820→                target="_blank"
+   821→   821→                rel="noopener noreferrer"
+   822→   822→                className="block"
+   823→   823→              >
+   824→   824→                <motion.button
+   825→   825→                  whileTap={{ scale: 0.98 }}
+   826→   826→                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] text-white text-sm font-semibold rounded-xl shadow-lg shadow-[#25D366]/20"
+   827→   827→                >
+   828→   828→                  <MessageCircle className="w-4 h-4" />
+   829→   829→                  Cotizar por WhatsApp
+   830→   830→                </motion.button>
+   831→   831→              </a>
+   832→   832→            </div>
+   833→   833→
+   834→   834→            {/* Mobile Tabs */}
+   835→   835→            <div>
+   836→   836→              <div className="flex border-b border-border/50 overflow-x-auto">
+   837→   837→                {tabs.map((tab) => (
+   838→   838→                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+   839→   839→                    className={`relative px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors min-h-[40px] ${
+   840→   840→                      activeTab === tab.key ? 'text-primary' : 'text-muted-foreground'
+   841→   841→                    }`}>
+   842→   842→                    {tab.label}
+   843→   843→                    {activeTab === tab.key && (
+   844→   844→                      <motion.div layoutId="tab-underline-m" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+   845→   845→                    )}
+   846→   846→                  </button>
+   847→   847→                ))}
+   848→   848→              </div>
+   849→   849→
+   850→   850→              <AnimatePresence mode="wait">
+   851→   851→                <motion.div key={activeTab} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }} className="py-3">
+   852→   852→                  {activeTab === 'descripcion' && (
+   853→   853→                    <div className="space-y-2">
+   854→   854→                      <p className="text-xs text-muted-foreground leading-relaxed">
+   855→   855→                        Producto ideal para uso en ecommerce, tiendas por departamento y logística empresarial.
+   856→   856→                        Diseñado para proteger tus mercancías durante el transporte y almacenamiento.
+   857→   857→                      </p>
+   858→   858→                      <p className="text-xs text-muted-foreground leading-relaxed">
+   859→   859→                        {product.descripcion}
+   860→   860→                      </p>
+   861→   861→                    </div>
+   862→   862→                  )}
+   863→   863→                  {activeTab === 'especificaciones' && (
+   864→   864→                    <div className="space-y-1.5">
+   865→   865→                      {[
+   866→   866→                        ['Material', product.material],
+   867→   867→                        ['Categoría', product.categoria],
+   868→   868→                        ['Medidas', product.medidas.join(', ')],
+   869→   869→                        ['Colores', product.colores.join(', ')],
+   870→   870→                        ['Packs', product.packs.map(p => `${p.cantidad} uds (-${p.descuento}%)`).join(', ')],
+   871→   871→                      ].map(([label, value]) => (
+   872→   872→                        <div key={label} className="flex justify-between py-2 border-b border-border/30 text-xs">
+   873→   873→                          <span className="text-muted-foreground">{label}</span>
+   874→   874→                          <span className="font-medium text-foreground text-right ml-3 max-w-[60%]">{value}</span>
+   875→   875→                        </div>
+   876→   876→                      ))}
+   877→   877→                    </div>
+   878→   878→                  )}
+   879→   879→                  {activeTab === 'envios' && (
+   880→   880→                    <div className="space-y-4">
+   881→   881→                      <div>
+   882→   882→                        <h4 className="text-xs font-bold text-foreground mb-2">Envíos a Todo el Perú</h4>
+   883→   883→                        <div className="bg-primary/5 rounded-xl border border-primary/10 overflow-hidden">
+   884→   884→                          <div className="divide-y divide-primary/5">
+   885→   885→                            {shippingTiers.map((tier) => (
+   886→   886→                              <div key={tier.label} className="flex justify-between px-3 py-2 text-xs">
+   887→   887→                                <span className="font-medium text-foreground">{tier.label}</span>
+   888→   888→                                <span className="text-muted-foreground">{tier.info}</span>
+   889→   889→                              </div>
+   890→   890→                            ))}
+   891→   891→                          </div>
+   892→   892→                        </div>
+   893→   893→                      </div>
+   894→   894→                      <div className="space-y-2.5">
+   895→   895→                        {[
+   896→   896→                          { icon: Truck, title: 'Despacho en 24h', desc: 'Pedidos antes de las 2pm se despachan el mismo día (Lima). Provincias en 48-72h.' },
+   897→   897→                          { icon: Shield, title: 'Envío Seguro', desc: 'Protección adicional contra golpes y manipulación durante el transporte.' },
+   898→   898→                          { icon: Phone, title: 'Seguimiento', desc: 'Notificaciones por WhatsApp con el estado de tu envío en tiempo real.' },
+   899→   899→                        ].map(({ icon: Icon, title, desc }) => (
+   900→   900→                          <div key={title} className="flex gap-2.5">
+   901→   901→                            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+   902→   902→                              <Icon className="w-4 h-4 text-primary" />
+   903→   903→                            </div>
+   904→   904→                            <div>
+   905→   905→                              <h4 className="text-xs font-semibold text-foreground">{title}</h4>
+   906→   906→                              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{desc}</p>
+   907→   907→                            </div>
+   908→   908→                          </div>
+   909→   909→                        ))}
+   910→   910→                      </div>
+   911→   911→                    </div>
+   912→   912→                  )}
+   913→   913→                </motion.div>
+   914→   914→              </AnimatePresence>
+   915→   915→            </div>
+   916→   916→          </motion.div>
+   917→   917→        </div>
+   918→   918→
+   919→   919→        {/* ============================================================ */}
+   920→   920→        {/* Related Products — Mobile-first grid                        */}
+   921→   921→        {/* ============================================================ */}
+   922→   922→        {relatedProducts.length > 0 && (
+   923→   923→          <section className="mt-8 sm:mt-12 pt-6 border-t border-border/50">
+   924→   924→            <h2 className="text-base sm:text-lg font-bold text-foreground mb-3 sm:mb-4">Productos Relacionados</h2>
+   925→   925→            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
+   926→   926→              {relatedProducts.map((rp, i) => (
+   927→   927→                <Link key={rp.id} href={`/productos/${rp.slug || rp.id}`}>
+   928→   928→                  <motion.div
+   929→   929→                    initial={{ opacity: 0, y: 15 }}
+   930→   930→                    whileInView={{ opacity: 1, y: 0 }}
+   931→   931→                    viewport={{ once: true }}
+   932→   932→                    transition={{ delay: i * 0.08 }}
+   933→   933→                    className="group bg-card border border-border/50 rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-md"
+   934→   934→                  >
+   935→   935→                    <div className="aspect-square bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+   936→   936→                      <Package className="w-6 h-6 sm:w-8 sm:h-8 text-primary/30" />
+   937→   937→                    </div>
+   938→   938→                    <div className="p-2.5 sm:p-3">
+   939→   939→                      <h3 className="text-[11px] sm:text-xs font-bold text-foreground group-hover:text-primary truncate">{rp.nombre}</h3>
+   940→   940→                      <p className="text-sm sm:text-lg font-extrabold text-primary mt-0.5 sm:mt-1">
+   941→   941→                        {formatPrice(rp.packs[0].precio / rp.packs[0].cantidad)}/u
+   942→   942→                      </p>
+   943→   943→                    </div>
+   944→   944→                  </motion.div>
+   945→   945→                </Link>
+   946→   946→              ))}
+   947→   947→            </div>
+   948→   948→          </section>
+   949→   949→        )}
+   950→   950→      </div>
+   951→   951→
+   952→   952→      {/* ============================================================ */}
+   953→   953→      {/* MOBILE: Sticky CTAs above bottom nav                         */}
+   954→   954→      {/* ============================================================ */}
+   955→   955→      <div className="md:hidden fixed bottom-[calc(68px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-border/40 px-3 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+   956→   956→        <div className="flex items-center gap-2">
+   957→   957→          <motion.button
+   958→   958→            whileTap={{ scale: 0.97 }}
+   959→   959→            onClick={handleAddToCart}
+   960→   960→            disabled={addedToCart}
+   961→   961→            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-3 text-sm font-semibold rounded-xl transition-all min-h-[44px] ${
+   962→   962→              addedToCart
+   963→   963→                ? 'bg-secondary text-secondary-foreground'
+   964→   964→                : 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+   965→   965→            }`}
+   966→   966→          >
+   967→   967→            {addedToCart ? (
+   968→   968→              <><Check className="w-4 h-4" /> ¡Listo!</>
+   969→   969→            ) : (
+   970→   970→              <><ShoppingCart className="w-4 h-4" /> Agregar</>
+   971→   971→            )}
+   972→   972→          </motion.button>
+   973→   973→          <motion.button
+   974→   974→            whileTap={{ scale: 0.97 }}
+   975→   975→            onClick={handleWhatsApp}
+   976→   976→            className="flex items-center justify-center gap-1.5 px-3 py-3 bg-[#25D366] text-white text-sm font-semibold rounded-xl min-h-[44px] shadow-lg shadow-[#25D366]/20"
+   977→   977→          >
+   978→   978→            <MessageCircle className="w-4 h-4" />
+   979→   979→            <span>WhatsApp</span>
+   980→   980→          </motion.button>
+   981→   981→        </div>
+   982→   982→      </div>
+   983→   983→
+   984→   984→      <LightboxGallery product={product} isOpen={isLightboxOpen} onClose={() => setIsLightboxOpen(false)} />
+   985→   985→    </div>
+   986→   986→  );
+   987→   987→}
