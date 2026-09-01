@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -232,8 +233,18 @@ export default function FavoritesDrawer({ isOpen, onClose }: FavoritesDrawerProp
                             onClick={onClose}
                             className="shrink-0"
                           >
-                            <div className="w-16 h-16 sm:w-[72px] sm:h-[72px] bg-gradient-to-br from-primary/8 to-secondary/8 rounded-xl flex items-center justify-center group-hover:from-primary/15 group-hover:to-secondary/15 transition-colors">
-                              <Package className="w-7 h-7 text-primary/40" />
+                            <div className="relative w-16 h-16 sm:w-[72px] sm:h-[72px] bg-gradient-to-br from-primary/8 to-secondary/8 rounded-xl flex items-center justify-center overflow-hidden group-hover:from-primary/15 group-hover:to-secondary/15 transition-colors">
+                              {product.imagenes && product.imagenes.length > 0 && product.imagenes[0]?.startsWith('http') ? (
+                                <Image
+                                  src={product.imagenes[0]}
+                                  alt={product.nombre}
+                                  fill
+                                  className="object-contain p-1.5"
+                                  sizes="72px"
+                                />
+                              ) : (
+                                <Package className="w-7 h-7 text-primary/40" />
+                              )}
                             </div>
                           </Link>
 

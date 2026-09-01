@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -168,11 +169,21 @@ export default function FavoritosPage() {
                     <div className="group relative bg-card rounded-2xl border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-primary/10">
                       {/* Image */}
                       <div className="relative aspect-[4/3] bg-gradient-to-br from-muted via-muted to-muted/50 overflow-hidden">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/15 to-secondary/15 flex items-center justify-center">
-                            <Package className="w-10 h-10 text-primary/60" />
+                        {product.imagenes && product.imagenes.length > 0 && product.imagenes[0]?.startsWith('http') ? (
+                          <Image
+                            src={product.imagenes[0]}
+                            alt={product.nombre}
+                            fill
+                            className="object-contain p-3"
+                            sizes="(max-width: 768px) 50vw, 33vw"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/15 to-secondary/15 flex items-center justify-center">
+                              <Package className="w-10 h-10 text-primary/60" />
+                            </div>
                           </div>
-                        </div>
+                        )}
 
                         {/* Category */}
                         <div className="absolute top-3 left-3">
