@@ -109,30 +109,40 @@ export async function fetchSiteSettings(): Promise<SiteSettings | null> {
 import type { Product } from './types';
 import { allProductsQuery, allProductsPreviewQuery } from './sanity.queries';
 
-/** Convert a Sanity image asset _ref to a CDN URL.
- *  ref format: "image-{sha1}-{width}x{height}-{format}"
- *  result: "https://cdn.sanity.io/images/{projectId}/{dataset}/{sha1}-{width}x{height}.{format}"
- */
-function refToCdnUrl(ref: string): string {
-  const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production';
-  const pid = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '981jghg0';
-  // Remove "image-" prefix, replace last "-{ext}" with ".{ext}"
-  const withoutPrefix = ref.replace(/^image-/, '');
-  const lastDash = withoutPrefix.lastIndexOf('-');
-  const ext = withoutPrefix.substring(lastDash + 1);
-  const base = withoutPrefix.substring(0, lastDash);
-  return `https://cdn.sanity.io/images/${pid}/${dataset}/${base}.${ext}`;
+/** Convert any Sanity image representation (URL, asset _ref, or image object) to a CDN URL */
+function toCdnUrl(item: any): string | null {
+  if (!item) return null;
+  if (typeof item === 'string') {
+    if (item.startsWith('http://') || item.startsWith('https://')) return item;
+    if (item.startsWith('image-')) {
+      const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production';
+      const pid = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '981jghg0';
+      const withoutPrefix = item.replace(/^image-/, '');
+      const lastDash = withoutPrefix.lastIndexOf('-');
+      const ext = withoutPrefix.substring(lastDash + 1);
+      const base = withoutPrefix.substring(0, lastDash);
+      return `https://cdn.sanity.io/images/${pid}/${dataset}/${base}.${ext}`;
+    }
+  }
+  if (typeof item === 'object') {
+    if (typeof item.url === 'string') return item.url;
+    if (item.asset) {
+      if (typeof item.asset === 'string') return toCdnUrl(item.asset);
+      if (item.asset.url) return item.asset.url;
+      if (item.asset._ref) return toCdnUrl(item.asset._ref);
+    }
+  }
+  return null;
 }
 
 export async function fetchProducts(): Promise<Product[] | null> {
   const preview = isPreview();
   const res = await safeFetch<Product[]>(preview ? allProductsPreviewQuery : allProductsQuery, preview);
   if (!res) return null;
-  // Convert imagenes from asset _refs to CDN URLs
   return res.map((product) => ({
     ...product,
     imagenes: (product.imagenes || [])
-      .filter((ref: string) => typeof ref === 'string' && ref.startsWith('image-'))
-      .map((ref: string) => refToCdnUrl(ref)),
+      .map((img: any) => toCdnUrl(img))
+      .filter((url): url is string => Boolean(url && (url.startsWith('http://') || url.startsWith('https://')))),
   }));
 }

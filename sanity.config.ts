@@ -48,13 +48,20 @@ export default defineConfig({
       name: 'presentation',
       title: 'Presentation',
       previewUrl: {
-        origin: siteUrl,
+        origin: typeof window !== 'undefined' && window.location.origin
+          ? window.location.origin
+          : (process.env.NEXT_PUBLIC_SITE_URL || 'https://gudstor-pack.vercel.app'),
         draftMode: {
           enable: '/api/draft-mode/enable',
         },
       },
-      // Esto desbloquea el nuevo iframe security check introducido en Sanity v3
-      allowOrigins: ['http://localhost:3000', 'https://gudstor-pack.vercel.app']
+      allowOrigins: [
+        'http://localhost:3000',
+        'https://gudstor-pack.vercel.app',
+        'https://gudstor-pack-cms.vercel.app',
+        'https://*.sanity.io',
+        'https://*.sanity.studio'
+      ]
     }),
   ],
 

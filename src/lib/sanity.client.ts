@@ -21,7 +21,7 @@ export const draftClient = createClient({
   perspective: 'previewDrafts',
   stega: {
     enabled: true,
-    studioUrl: 'http://localhost:3000/admin',
+    studioUrl: '/admin',
     logger: process.env.NODE_ENV === 'development' ? console : undefined,
   },
 });

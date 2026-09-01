@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors 'self' https://*.sanity.io https://*.sanity.studio http://localhost:3000 https://gudstor-pack-cms.vercel.app"
+            value: "frame-ancestors 'self' https://*.sanity.io https://*.sanity.studio http://localhost:3000 https://gudstor-pack.vercel.app https://gudstor-pack-cms.vercel.app"
           }
         ]
       }

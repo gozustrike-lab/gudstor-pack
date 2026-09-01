@@ -47,10 +47,16 @@ export default defineType({
     defineField({ name: 'order', title: 'Orden', type: 'number', initialValue: 0 }),
   ],
   preview: {
-    select: { nombre: 'nombre', categoria: 'categoria', slug: 'slug' },
-    prepare: ({ nombre, categoria, slug }) => ({
+    select: {
+      nombre: 'nombre',
+      categoria: 'categoria',
+      slug: 'slug',
+      media: 'imagenes.0',
+    },
+    prepare: ({ nombre, categoria, slug, media }) => ({
       title: nombre,
       subtitle: `${categoria} — /productos/${slug?.current || ''}`,
+      media,
     }),
   },
   orderings: [{ title: 'Orden', name: 'orderAsc', by: [{ field: 'order', direction: 'asc' }] }],
