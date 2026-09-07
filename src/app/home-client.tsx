@@ -29,6 +29,7 @@ interface HomePageClientProps {
   sanityTestimonials: Testimonial[] | null;
   sanitySettings: SiteSettings | null;
   sanityPartners: Partner[] | null;
+  initialProducts?: Product[];
 }
 
 // ─── Local Fallback Data ────────────────────────────────────────────────────
@@ -276,9 +277,11 @@ function HeroCarousel({ slides }: { slides: SlideData[] }) {
 
 // ─── Product Slider ──────────────────────────────────────────────────────────
 
-function ProductSlider() {
-  const fp = visibleProducts.filter((p) => p.destacado);
-  const dup = [...fp, ...fp];
+function ProductSlider({ items }: { items?: Product[] }) {
+  const prodList = (items && items.length > 0) ? items : visibleProducts;
+  const fp = prodList.filter((p) => p.destacado);
+  const finalFp = fp.length > 0 ? fp : prodList.slice(0, 8);
+  const dup = [...finalFp, ...finalFp];
   const scrollRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -448,7 +451,14 @@ function ProductSlider() {
 
 // ─── Main Client Component ─────────────────────────────────────────────────
 
-export default function HomePageClient({ sanitySlides, sanityStats, sanityTestimonials, sanitySettings, sanityPartners }: HomePageClientProps) {
+export default function HomePageClient({
+  sanitySlides,
+  sanityStats,
+  sanityTestimonials,
+  sanitySettings,
+  sanityPartners,
+  initialProducts,
+}: HomePageClientProps) {
   const settingsId = sanitySettings?._id || null;
 
   // ── Merge: Sanity data if available, local fallback ──
@@ -649,7 +659,7 @@ export default function HomePageClient({ sanitySlides, sanityStats, sanityTestim
             </div>
             <Link href="/productos" className="hidden sm:flex items-center gap-1 text-sm font-semibold text-primary hover:underline">Ver todos <ArrowRight className="w-4 h-4" /></Link>
           </motion.div>
-          <ProductSlider />
+          <ProductSlider items={initialProducts} />
           <div className="mt-8 text-center sm:hidden">
             <Link href="/productos"><button className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl shadow-lg shadow-primary/20">Ver todos los productos <ArrowRight className="w-4 h-4" /></button></Link>
           </div>

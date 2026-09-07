@@ -9,6 +9,7 @@ interface FooterProps {
 }
 
 const CATEGORIES = [
+  { label: 'Packs Especiales', href: '/packs-especiales' },
   { label: 'Cajas', href: '/productos?categoria=Cajas' },
   { label: 'Films', href: '/productos?categoria=Films' },
   { label: 'Cintas', href: '/productos?categoria=Cintas' },

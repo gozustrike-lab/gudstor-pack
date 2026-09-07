@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Search, Menu, X, Package, ChevronDown, Heart, Home, Box, Layers, Ruler, CircleDot, ShoppingBag, MessageCircle, BookOpen } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, Package, ChevronDown, Heart, Home, Box, Layers, Ruler, CircleDot, ShoppingBag, MessageCircle, BookOpen, Sparkles } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useFavoritesStore } from '@/lib/favorites-store';
 import FavoritesPanel from '@/components/favorites-panel';
@@ -21,6 +21,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const totalItems = useCartStore((s) => s.items.reduce((t, i) => t + i.quantity, 0));
+  const openCart = useCartStore((s) => s.openCart);
   const totalFavorites = useFavoritesStore((s) => s.items.length);
 
   const searchResults = useMemo(() => {
@@ -232,12 +233,12 @@ export default function Navbar() {
                     </Link>
 
                     <Link
-                      href="/productos"
+                      href="/packs-especiales"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground/85 hover:text-primary hover:bg-primary/5 transition-all active:bg-primary/10"
+                      className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground/85 hover:text-amber-600 hover:bg-amber-50/50 transition-all active:bg-amber-50"
                     >
-                      <BookOpen className="w-[18px] h-[18px] text-muted-foreground" />
-                      Catálogo
+                      <Sparkles className="w-[18px] h-[18px] text-amber-500" />
+                      Packs Especiales
                     </Link>
 
                     <Link
@@ -290,10 +291,12 @@ export default function Navbar() {
                     </Link>
 
                     {/* ── Carrito ── */}
-                    <Link
-                      href="/carrito"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground/85 hover:text-primary hover:bg-primary/5 transition-all"
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        openCart();
+                      }}
+                      className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium text-foreground/85 hover:text-primary hover:bg-primary/5 transition-all text-left"
                     >
                       <ShoppingCart className="w-[18px] h-[18px] text-muted-foreground" />
                       Carrito
@@ -302,7 +305,7 @@ export default function Navbar() {
                           {totalItems}
                         </span>
                       )}
-                    </Link>
+                    </button>
 
                     {/* ── Contacto WhatsApp ── */}
                     <a
@@ -356,10 +359,10 @@ export default function Navbar() {
                 Inicio
               </Link>
               <Link
-                href="/productos"
+                href="/packs-especiales"
                 className="px-4 py-2 text-sm font-medium rounded-lg transition-all text-foreground/80 hover:text-amber-600 hover:bg-amber-50/50"
               >
-                Catálogo
+                Packs Especiales
               </Link>
               <div className="relative group">
                 <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-all text-foreground/80 hover:text-amber-600 hover:bg-amber-50/50">
@@ -386,12 +389,12 @@ export default function Navbar() {
                   </div>
                 </div>
               </div>
-              <Link
-                href="/carrito"
-                className="px-4 py-2 text-sm font-medium rounded-lg transition-all text-foreground/80 hover:text-amber-600 hover:bg-amber-50/50"
+              <button
+                onClick={openCart}
+                className="px-4 py-2 text-sm font-medium rounded-lg transition-all text-foreground/80 hover:text-amber-600 hover:bg-amber-50/50 cursor-pointer"
               >
                 Carrito
-              </Link>
+              </button>
             </div>
 
             {/* Actions */}
@@ -487,7 +490,11 @@ export default function Navbar() {
               </button>
 
               {/* Cart */}
-              <Link href="/carrito" className="relative p-2.5 rounded-xl transition-all text-foreground/60 hover:text-amber-600 hover:bg-amber-50/50">
+              <button
+                onClick={openCart}
+                className="relative p-2.5 rounded-xl transition-all text-foreground/60 hover:text-amber-600 hover:bg-amber-50/50 cursor-pointer"
+                aria-label="Abrir carrito"
+              >
                 <ShoppingCart className="w-5 h-5" />
                 <AnimatePresence>
                   {totalItems > 0 && (
@@ -502,7 +509,7 @@ export default function Navbar() {
                     </motion.span>
                   )}
                 </AnimatePresence>
-              </Link>
+              </button>
             </div>
           </div>
         </nav>

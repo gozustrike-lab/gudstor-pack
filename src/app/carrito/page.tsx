@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShoppingCart,
@@ -39,6 +40,7 @@ interface CustomerForm {
 
 export default function CarritoPage() {
   const { items, updateQuantity, removeItem, clearCart, totalPrice, totalItems } = useCartStore();
+  const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState<CustomerForm>({
     nombre: '',
     documento: '',
@@ -49,6 +51,10 @@ export default function CarritoPage() {
     departamento: '',
   });
   const [isSending, setIsSending] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useScrollSpy({
     ids: ['carrito-header', 'carrito-items', 'resumen-pedido', 'datos-envio'],
@@ -62,11 +68,13 @@ export default function CarritoPage() {
   const isFormValid = form.nombre.trim() && form.telefono.trim().length >= 9 && items.length > 0;
 
   const getItemUnitPrice = (item: typeof items[0]) => {
+    const packs = Array.isArray(item.product?.packs) ? item.product.packs : [];
     if (item.packSize) {
-      const pack = item.product.packs.find((p) => p.cantidad === item.packSize);
-      if (pack) return pack.precio / pack.cantidad;
+      const pack = packs.find((p) => p.cantidad === item.packSize);
+      if (pack && typeof pack.precio === 'number') return pack.precio;
     }
-    return item.product.precio;
+    const base = typeof item.product?.precio === 'number' ? item.product.precio : 0;
+    return base * (item.packSize || 1);
   };
 
   const getItemSubtotal = (item: typeof items[0]) => {
@@ -123,6 +131,14 @@ export default function CarritoPage() {
       });
     }, 1000);
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
@@ -182,104 +198,123 @@ export default function CarritoPage() {
             {/* Cart Items */}
             <div id="carrito-items" className="lg:col-span-2 space-y-4">
               <AnimatePresence>
-                {items.map((item) => (
-                  <motion.div
-                    key={`${item.product.id}-${item.packSize || 'unit'}`}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -100, height: 0 }}
-                    className="bg-card border border-border/50 rounded-2xl p-4 sm:p-6 overflow-hidden"
-                  >
-                    <div className="flex gap-3 sm:gap-4">
-                      {/* Product Image */}
-                      <Link href={`/productos/${item.product.slug || item.product.id}`} className="shrink-0">
-                        <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-muted to-muted/50 rounded-xl flex items-center justify-center">
-                          <Package className="w-6 h-6 sm:w-8 sm:h-8 text-primary/30" />
-                        </div>
-                      </Link>
+                {items.map((item) => {
+                  const cdnImage = item.product?.imagenes?.find(
+                    (img) => typeof img === 'string' && img.startsWith('http')
+                  );
+                  const detailHref = item.product?.seoPath && item.product.seoPath !== 'productos'
+                    ? `/${item.product.seoPath}/${item.product.slug || item.product.id}`
+                    : `/productos/${item.product?.slug || item.product?.id || ''}`;
 
-                      {/* Product Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 min-w-0">
-                          <div>
-                            <Link href={`/productos/${item.product.slug || item.product.id}`}>
-                              <h3 className="text-sm sm:text-base font-bold text-foreground hover:text-primary transition-colors truncate">
-                                {item.product.nombre}
-                              </h3>
-                            </Link>
-                            <div className="flex flex-wrap gap-1.5 mt-1">
-                              {item.packSize && (
-                                <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                                  Pack {item.packSize} uds
-                                </span>
-                              )}
-                              {item.medida && (
-                                <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
-                                  {item.medida}
-                                </span>
-                              )}
-                              {item.color && (
-                                <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
-                                  {item.color}
-                                </span>
-                              )}
-                            </div>
+                  return (
+                    <motion.div
+                      key={`${item.product?.id}-${item.packSize || 'unit'}-${item.medida}-${item.color}`}
+                      layout
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -100, height: 0 }}
+                      className="bg-card border border-border/50 rounded-2xl p-4 sm:p-6 overflow-hidden"
+                    >
+                      <div className="flex gap-3 sm:gap-4">
+                        {/* Product Image */}
+                        <Link href={detailHref} className="shrink-0">
+                          <div className="relative w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-muted to-muted/50 rounded-xl overflow-hidden flex items-center justify-center">
+                            {cdnImage ? (
+                              <Image
+                                src={cdnImage}
+                                alt={item.product?.nombre || 'Producto'}
+                                fill
+                                className="object-contain p-2"
+                                sizes="(max-width: 640px) 64px, 96px"
+                              />
+                            ) : (
+                              <Package className="w-6 h-6 sm:w-8 sm:h-8 text-primary/30" />
+                            )}
                           </div>
-                          <button
-                            onClick={() => removeItem(item.product.id)}
-                            className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors shrink-0"
-                            aria-label="Eliminar producto"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        </Link>
 
-                        <div className="flex items-end justify-between mt-3 sm:mt-4">
-                          {/* Quantity */}
-                          <div>
-                            <div className="inline-flex items-center border border-border rounded-lg overflow-hidden">
-                              <button
-                                onClick={() =>
-                                  updateQuantity(item.product.id, item.quantity - 1)
-                                }
-                                className="w-8 h-8 flex items-center justify-center hover:bg-muted/50 transition-colors"
-                                aria-label="Reducir cantidad"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </button>
-                              <span className="w-12 h-8 flex items-center justify-center text-sm font-medium border-x border-border">
-                                {item.quantity}
-                              </span>
-                              <button
-                                onClick={() =>
-                                  updateQuantity(item.product.id, item.quantity + 1)
-                                }
-                                className="w-8 h-8 flex items-center justify-center hover:bg-muted/50 transition-colors"
-                                aria-label="Aumentar cantidad"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
+                        {/* Product Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 min-w-0">
+                            <div>
+                              <Link href={detailHref}>
+                                <h3 className="text-sm sm:text-base font-bold text-foreground hover:text-primary transition-colors truncate">
+                                  {item.product?.nombre}
+                                </h3>
+                              </Link>
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {item.packSize && (
+                                  <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                                    Pack {item.packSize} uds
+                                  </span>
+                                )}
+                                {item.medida && (
+                                  <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
+                                    {item.medida}
+                                  </span>
+                                )}
+                                {item.color && (
+                                  <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
+                                    {item.color}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <p className="text-[10px] text-muted-foreground mt-1">
-                              {formatPrice(getItemUnitPrice(item))} c/u
-                            </p>
+                            <button
+                              onClick={() => removeItem(item.product.id, item.packSize)}
+                              className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors shrink-0"
+                              aria-label="Eliminar producto"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
 
-                          {/* Subtotal */}
-                          <div className="text-right shrink-0 ml-2 min-w-0">
-                            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
-                              {item.quantity}u x {formatPrice(getItemUnitPrice(item))}
-                            </p>
-                            <p className="text-base sm:text-lg font-extrabold text-primary">
-                              {formatPrice(getItemSubtotal(item))}
-                            </p>
+                          <div className="flex items-end justify-between mt-3 sm:mt-4">
+                            {/* Quantity */}
+                            <div>
+                              <div className="inline-flex items-center border border-border rounded-lg overflow-hidden">
+                                <button
+                                  onClick={() =>
+                                    updateQuantity(item.product.id, item.quantity - 1, item.packSize)
+                                  }
+                                  className="w-8 h-8 flex items-center justify-center hover:bg-muted/50 transition-colors"
+                                  aria-label="Reducir cantidad"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </button>
+                                <span className="w-12 h-8 flex items-center justify-center text-sm font-medium border-x border-border">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  onClick={() =>
+                                    updateQuantity(item.product.id, item.quantity + 1, item.packSize)
+                                  }
+                                  className="w-8 h-8 flex items-center justify-center hover:bg-muted/50 transition-colors"
+                                  aria-label="Aumentar cantidad"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </button>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                {formatPrice(getItemUnitPrice(item))} c/u
+                              </p>
+                            </div>
+
+                            {/* Subtotal */}
+                            <div className="text-right shrink-0 ml-2 min-w-0">
+                              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                                {item.quantity} {item.quantity === 1 ? 'pack' : 'packs'} x {formatPrice(getItemUnitPrice(item))}
+                              </p>
+                              <p className="text-base sm:text-lg font-extrabold text-primary">
+                                {formatPrice(getItemSubtotal(item))}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
 
               {/* Continue Shopping */}

@@ -31,7 +31,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Categorías', href: '/productos', icon: Grid3X3, key: 'categories' },
   { label: 'Favoritos', href: '/favoritos', icon: Heart, key: 'favorites' },
   { label: 'Buscar', href: null, icon: Search, key: 'search' },
-  { label: 'Carrito', href: '/carrito', icon: ShoppingCart, key: 'cart' },
+  { label: 'Carrito', href: null, icon: ShoppingCart, key: 'cart' },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -53,6 +53,7 @@ function resolveActiveKey(pathname: string): string {
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const totalItems = useCartStore((s) => s.items.reduce((t, i) => t + i.quantity, 0));
+  const openCart = useCartStore((s) => s.openCart);
   const totalFavorites = useFavoritesStore((s) => s.items.length);
 
   const activeKey = useMemo(() => resolveActiveKey(pathname), [pathname]);
@@ -62,6 +63,9 @@ export default function MobileBottomNav() {
   const handleClick = (item: NavItem) => {
     if (item.key === 'search') {
       window.dispatchEvent(new Event('open-mobile-search'));
+    }
+    if (item.key === 'cart') {
+      openCart();
     }
     if (item.key === 'quote') {
       window.open(`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(WHATSAPP_DEFAULT_MESSAGE)}`, '_blank', 'noopener');

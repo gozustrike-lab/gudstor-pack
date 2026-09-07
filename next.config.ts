@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    turbopackUseSystemTlsCerts: true,
+  },
   reactStrictMode: false,
   images: {
     remotePatterns: [

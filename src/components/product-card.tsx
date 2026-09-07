@@ -27,7 +27,10 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const isFav = useFavoritesStore((s) => s.isFavorite(product.id));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
 
-  const selectedPack = product.packs[selectedPackIndex];
+  const selectedPack =
+    product.packs?.[selectedPackIndex] ||
+    product.packs?.[0] ||
+    { cantidad: 25, precio: product.precio || 0, descuento: 0 };
 
   const handleAddToCart = useCallback(
     (e: React.MouseEvent) => {
@@ -35,10 +38,11 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       e.stopPropagation();
       addItem(
         product,
+        1, // 1 pack
+        product.medidas?.[0] || '',
+        product.colores?.[0] || '',
         selectedPack.cantidad,
-        product.medidas[0],
-        product.colores[0],
-        selectedPack.cantidad
+        true
       );
     },
     [product, selectedPack, addItem]
@@ -56,7 +60,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   );
 
   // Compute the per-unit price from pack (price / quantity)
-  const pricePerUnit = selectedPack.precio / selectedPack.cantidad;
+  const pricePerUnit = selectedPack.cantidad > 0 ? selectedPack.precio / selectedPack.cantidad : 0;
 
   return (
     <motion.div
@@ -114,10 +118,19 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             </motion.div>
 
             {/* Category Badge */}
-            <div className="absolute top-3 left-3">
-              <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase bg-white/90 backdrop-blur-sm text-foreground rounded-lg">
+            <div className="absolute top-3 left-3 z-10">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.location.href = `/productos?categoria=${encodeURIComponent(product.categoria)}`;
+                }}
+                className="inline-flex items-center px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase bg-white/95 backdrop-blur-sm text-foreground hover:text-primary hover:bg-white rounded-lg shadow-xs transition-colors cursor-pointer"
+                title={`Ver categoría ${product.categoria}`}
+              >
                 {product.categoria}
-              </span>
+              </button>
             </div>
 
             {/* Heart / Favorite Button */}

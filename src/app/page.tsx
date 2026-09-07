@@ -1,18 +1,34 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { fetchProducts } from '@/lib/fetchCMS';
+import {
+  fetchHeroSlides,
+  fetchStats,
+  fetchTestimonials,
+  fetchSiteSettings,
+  fetchPartners,
+  fetchProducts,
+} from '@/lib/fetchCMS';
 import fallbackProducts from '@/data/products.json';
-import ProductosContent from './productos/productos-client';
+import HomePageClient from './home-client';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'GUDSTOR PACK | Soluciones en Embalaje',
-  description: 'Materiales de embalaje profesional para ecommerce, logística e industria. Cajas, films, cintas y más. Envío rápido a todo Perú.',
+  title: 'GUDSTOR PACK | Soluciones Integrales en Embalaje',
+  description: 'Materiales de embalaje profesional para ecommerce, logística e industria. Cajas Kraft, films, cintas y más. Descuentos por mayor y envíos a todo Perú.',
 };
 
 export default async function HomePage() {
-  const sanityProducts = await fetchProducts();
+  const [sanitySlides, sanityStats, sanityTestimonials, sanitySettings, sanityPartners, sanityProducts] =
+    await Promise.all([
+      fetchHeroSlides(),
+      fetchStats(),
+      fetchTestimonials(),
+      fetchSiteSettings(),
+      fetchPartners(),
+      fetchProducts(),
+    ]);
+
   const finalProducts = (sanityProducts && sanityProducts.length > 0) ? sanityProducts : fallbackProducts;
 
   return (
@@ -23,7 +39,14 @@ export default async function HomePage() {
         </div>
       }
     >
-      <ProductosContent initialProducts={finalProducts as any} />
+      <HomePageClient
+        sanitySlides={sanitySlides}
+        sanityStats={sanityStats}
+        sanityTestimonials={sanityTestimonials}
+        sanitySettings={sanitySettings}
+        sanityPartners={sanityPartners}
+        initialProducts={finalProducts as any}
+      />
     </Suspense>
   );
 }

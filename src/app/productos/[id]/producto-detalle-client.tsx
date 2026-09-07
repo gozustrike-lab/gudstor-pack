@@ -159,16 +159,20 @@ export default function ProductoDetalleClient({
     window.history.replaceState(null, '', `${productSeoPath}/${id}?${qs}`);
   }, [product, id, selectedPackIndex, selectedMedida]);
 
-  const selectedPack = product?.packs[selectedPackIndex] ?? null;
+  const selectedPack =
+    product?.packs?.[selectedPackIndex] ??
+    product?.packs?.[0] ??
+    { cantidad: 25, precio: product?.precio || 0, descuento: 0 };
 
   const handleAddToCart = useCallback(() => {
     if (!product || !selectedPack) return;
     addItem(
       product,
-      selectedPack.cantidad,
+      1,
       selectedMedida || (product.medidas || [])[0],
       selectedColor || (product.colores || [])[0],
-      selectedPack.cantidad
+      selectedPack.cantidad,
+      true
     );
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
@@ -1120,14 +1124,14 @@ export default function ProductoDetalleClient({
       </div>
 
       {/* ============================================================ */}
-      {/* UNIFIED BOTTOM BAR: Total Pack + WhatsApp + Agregar */}
+      {/* UNIFIED BOTTOM BAR: Total Pack + Agregar al Carrito */}
       {/* ============================================================ */}
-      <div className="fixed bottom-[calc(68px+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-border/40 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-3 py-2">
-        <div className="max-w-3xl mx-auto flex items-center gap-2">
+      <div className="fixed bottom-[calc(68px+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-border/40 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-4 py-2.5">
+        <div className="max-w-xl mx-auto flex items-center gap-3">
           {/* Total Pack — visible on ALL devices */}
-          <div className="flex flex-col items-end shrink-0 mr-1">
-            <span className="text-[9px] sm:text-[10px] text-muted-foreground uppercase font-medium leading-none">Total pack</span>
-            <span className="text-base sm:text-lg font-extrabold text-primary leading-tight">
+          <div className="flex flex-col items-end shrink-0 mr-2">
+            <span className="text-[10px] text-muted-foreground uppercase font-semibold leading-none">Total pack</span>
+            <span className="text-lg sm:text-xl font-extrabold text-primary leading-tight">
               {formatPrice(selectedPack?.precio || 0)}
             </span>
           </div>
@@ -1137,37 +1141,17 @@ export default function ProductoDetalleClient({
             whileTap={{ scale: 0.97 }}
             onClick={handleAddToCart}
             disabled={addedToCart}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-3 text-sm font-semibold rounded-xl transition-all min-h-[44px] ${
+            className={`flex-1 flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold rounded-xl transition-all min-h-[44px] ${
               addedToCart
                 ? 'bg-secondary text-secondary-foreground'
-                : 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                : 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90'
             }`}
           >
             {addedToCart ? (
-              <><Check className="w-4 h-4" /> ¡Listo!</>
+              <><Check className="w-4 h-4" /> ¡Agregado al Carrito!</>
             ) : (
               <><ShoppingCart className="w-4 h-4" /> <span>Agregar al Carrito</span></>
             )}
-          </motion.button>
-
-          {/* WhatsApp — mobile: icon circle */}
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={handleWhatsApp}
-            className="sm:hidden flex-shrink-0 w-11 h-11 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg shadow-[#25D366]/25"
-            aria-label="Cotizar por WhatsApp"
-          >
-            <MessageCircle className="w-5 h-5 text-white" />
-          </motion.button>
-
-          {/* WhatsApp — desktop: full button */}
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={handleWhatsApp}
-            className="hidden sm:flex items-center gap-2 px-4 py-3 text-sm font-semibold rounded-xl bg-[#25D366] text-white shadow-lg shadow-[#25D366]/20 min-h-[44px] shrink-0"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>Cotizar por WhatsApp</span>
           </motion.button>
         </div>
       </div>

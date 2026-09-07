@@ -371,7 +371,23 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
     offset: '100px',
   });
 
-  // ── Sync state → URL via Next.js router (keeps internal state in sync) ──
+  // ── Sync URL searchParams → state (footer links, navbar dropdown links, back/forward navigation) ──
+  useEffect(() => {
+    const cat = searchParams.get('categoria') || '';
+    const sub = searchParams.get('subcategoria') || '';
+    setSelectedCategory(cat);
+    setSelectedSubcategory(sub);
+    if (!isFirstRender.current && typeof window !== 'undefined') {
+      const el = document.getElementById('catalogo');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  }, [searchParams]);
+
+  // ── Sync state → URL via Next.js router ──
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
@@ -438,6 +454,16 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
   const filterRef = useRef({ selectedCategory: '', selectedSubcategory: '' });
   filterRef.current = { selectedCategory, selectedSubcategory };
 
+  const scrollToCatalog = () => {
+    if (typeof window === 'undefined') return;
+    const el = document.getElementById('catalogo');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const handleCategoryClick = useCallback((cat: string) => {
     const { selectedCategory: prev } = filterRef.current;
     if (cat === prev) {
@@ -447,6 +473,7 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
       setSelectedCategory(cat);
       setSelectedSubcategory('');
     }
+    scrollToCatalog();
   }, []);
 
   const handleSubcategoryClick = useCallback((cat: string, sub: string) => {
@@ -457,11 +484,13 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
       setSelectedCategory(cat);
       setSelectedSubcategory(sub);
     }
+    scrollToCatalog();
   }, []);
 
   const clearAll = useCallback(() => {
     setSelectedCategory('');
     setSelectedSubcategory('');
+    scrollToCatalog();
   }, []);
 
   const activeFiltersCount = (selectedCategory ? 1 : 0) + (selectedSubcategory ? 1 : 0);

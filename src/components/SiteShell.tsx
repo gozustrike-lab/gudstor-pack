@@ -5,6 +5,7 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import MobileBottomNav from "@/components/mobile-bottom-nav";
 import WhatsAppButton from "@/components/whatsapp-button";
+import CartDrawer from "@/components/cart-drawer";
 import { Toaster } from "@/components/ui/toaster";
 import type { SiteSettings } from '@/lib/sanity.client';
 
@@ -42,6 +43,7 @@ export default function SiteShell({
       </main>
       <Footer sanitySettings={siteSettings} />
       <MobileBottomNav />
+      <CartDrawer />
       <WhatsAppButton />
       <Toaster />
     </>
