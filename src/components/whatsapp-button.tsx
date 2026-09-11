@@ -22,6 +22,7 @@ export default function WhatsAppButton() {
   const items = useCartStore((s) => s.items);
   const totalPrice = useCartStore((s) => s.totalPrice);
   const clearCart = useCartStore((s) => s.clearCart);
+  const isCartOpen = useCartStore((s) => s.isOpen);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [form, setForm] = useState<CustomerForm>({
@@ -79,9 +80,9 @@ export default function WhatsAppButton() {
     }, 800);
   };
 
-  // Hide on product detail pages — they have their own WhatsApp in the sticky bar
+  // Hide on product detail pages (they have their own sticky bar) and when cart drawer is open
   const isProductDetail = /^\/productos\/[^/]+$/.test(pathname);
-  if (items.length === 0 || isProductDetail) return null;
+  if (items.length === 0 || isProductDetail || isCartOpen) return null;
 
   return (
     <>

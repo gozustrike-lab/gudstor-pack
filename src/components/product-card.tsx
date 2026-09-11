@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Package, Star, Eye, Heart } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useFavoritesStore } from '@/lib/favorites-store';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getCleanCategoryPath } from '@/lib/utils';
 import type { Product } from '@/lib/types';
 
 interface ProductCardProps {
@@ -124,7 +124,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  window.location.href = `/productos?categoria=${encodeURIComponent(product.categoria)}`;
+                  window.location.href = getCleanCategoryPath(product.categoria);
                 }}
                 className="inline-flex items-center px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase bg-white/95 backdrop-blur-sm text-foreground hover:text-primary hover:bg-white rounded-lg shadow-xs transition-colors cursor-pointer"
                 title={`Ver categoría ${product.categoria}`}

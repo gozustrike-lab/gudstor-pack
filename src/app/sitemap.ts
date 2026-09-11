@@ -1,11 +1,12 @@
 import type { MetadataRoute } from 'next';
 import products from '@/data/products.json';
+import { getCleanCategoryPath, getProductHref } from '@/lib/utils';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://gudstorpack.com';
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://gudstor-pack.vercel.app';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const productPages = products.map((product) => ({
-    url: `${BASE_URL}/productos/${product.slug || product.id}`,
+    url: `${BASE_URL}${getProductHref(product)}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.8,
@@ -13,7 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const categories = [...new Set(products.map((p) => p.categoria))];
   const categoryPages = categories.map((cat) => ({
-    url: `${BASE_URL}/productos?categoria=${encodeURIComponent(cat)}`,
+    url: `${BASE_URL}${getCleanCategoryPath(cat)}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
@@ -31,6 +32,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
+    },
+    {
+      url: `${BASE_URL}/packs-especiales`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.85,
     },
     ...categoryPages,
     ...productPages,

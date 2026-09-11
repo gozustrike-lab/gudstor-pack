@@ -100,9 +100,6 @@ export function useScrollSpy({
           if (newId !== activeId) {
             activeId = newId;
             currentHash.current = newId;
-            // Actualizar URL sin recargar ni añadir al historial
-            const newUrl = `${window.location.pathname}${window.location.search}#${newId}`;
-            window.history.replaceState(null, '', newUrl);
           }
         }
       },
@@ -157,8 +154,6 @@ export function useScrollSpy({
       isScrollingFromHash.current = true;
       const headerOffset = parseInt(offset) || 80;
       const top = el.getBoundingClientRect().top + window.scrollY - headerOffset;
-
-      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${id}`);
       window.scrollTo({ top, behavior: 'smooth' });
 
       setTimeout(() => {

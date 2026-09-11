@@ -18,6 +18,7 @@ import {
 import ProductCard from '@/components/product-card';
 import products from '@/data/products.json';
 import { useScrollSpy } from '@/lib/use-scroll-spy';
+import { getCleanCategoryPath } from '@/lib/utils';
 import { dataSanityAttr } from '@/hooks/use-data-sanity';
 import type { HeroSlide, Stat, Testimonial, SiteSettings, Partner } from '@/lib/sanity.client';
 
@@ -45,9 +46,9 @@ const categories = [
 ];
 
 const localHeroSlides = [
-  { badge: '#1 en Materiales de Embalaje en Perú', title: 'Soluciones de', titleHighlight: 'Embalaje Profesional', description: 'Protege tus productos con materiales de la más alta calidad. Cajas Kraft, film estirable, cintas adhesivas y más.', ctaText: 'Ver Catálogo', ctaLink: '/productos', secondaryText: 'Cajas Kraft', secondaryLink: '/productos?categoria=Cajas', floaters: [{ label: 'Cajas Kraft', icon: Box, position: 'top-4 right-8', delay: 0 }, { label: 'Film Estirable', icon: Layers, position: 'bottom-12 left-4', delay: 0.5 }, { label: 'Cintas', icon: Ruler, position: 'bottom-4 right-16', delay: 1 }] },
-  { badge: 'Descuentos por Volumen', title: 'Cajas de Cartón', titleHighlight: 'Corrugado Premium', description: 'Más de 50 productos con descuentos de hasta 20% por volumen. Autoarmables, kraft, doble pared y más.', ctaText: 'Ver Cajas', ctaLink: '/productos?categoria=Cajas', secondaryText: 'Ver Films', secondaryLink: '/productos?categoria=Films', floaters: [{ label: 'Autoarmables', icon: Box, position: 'top-8 right-4', delay: 0 }, { label: 'Doble Pared', icon: Shield, position: 'bottom-8 left-8', delay: 0.6 }, { label: 'Kraft', icon: Package, position: 'bottom-4 right-8', delay: 1.2 }] },
-  { badge: 'Envíos a Todo el Perú', title: 'Films y Plásticos', titleHighlight: 'Industriales', description: 'Film estirable, termoencogible, antiestático y alimentario. Protección profesional para tu mercancía.', ctaText: 'Ver Films', ctaLink: '/productos?categoria=Films', secondaryText: 'Contactar', secondaryLink: 'https://wa.me/51977346837?text=Hola%2C%20quiero%20cotizar', floaters: [{ label: 'Estirable', icon: Layers, position: 'top-4 right-12', delay: 0 }, { label: 'Alimentario', icon: Shield, position: 'bottom-16 left-4', delay: 0.7 }, { label: 'Termoencogible', icon: Zap, position: 'bottom-4 right-20', delay: 1.3 }] },
+  { badge: '#1 en Materiales de Embalaje en Perú', title: 'Soluciones de', titleHighlight: 'Embalaje Profesional', description: 'Protege tus productos con materiales de la más alta calidad. Cajas Kraft, film estirable, cintas adhesivas y más.', ctaText: 'Ver Catálogo', ctaLink: '/productos', secondaryText: 'Cajas Kraft', secondaryLink: '/cajas-de-carton', floaters: [{ label: 'Cajas Kraft', icon: Box, position: 'top-4 right-8', delay: 0 }, { label: 'Film Estirable', icon: Layers, position: 'bottom-12 left-4', delay: 0.5 }, { label: 'Cintas', icon: Ruler, position: 'bottom-4 right-16', delay: 1 }] },
+  { badge: 'Descuentos por Volumen', title: 'Cajas de Cartón', titleHighlight: 'Corrugado Premium', description: 'Más de 50 productos con descuentos de hasta 20% por volumen. Autoarmables, kraft, doble pared y más.', ctaText: 'Ver Cajas', ctaLink: '/cajas-de-carton', secondaryText: 'Ver Films', secondaryLink: '/materiales-de-embalaje/stretch-film', floaters: [{ label: 'Autoarmables', icon: Box, position: 'top-8 right-4', delay: 0 }, { label: 'Doble Pared', icon: Shield, position: 'bottom-8 left-8', delay: 0.6 }, { label: 'Kraft', icon: Package, position: 'bottom-4 right-8', delay: 1.2 }] },
+  { badge: 'Envíos a Todo el Perú', title: 'Films y Plásticos', titleHighlight: 'Industriales', description: 'Film estirable, termoencogible, antiestático y alimentario. Protección profesional para tu mercancía.', ctaText: 'Ver Films', ctaLink: '/materiales-de-embalaje/stretch-film', secondaryText: 'Contactar', secondaryLink: 'https://wa.me/51977346837?text=Hola%2C%20quiero%20cotizar', floaters: [{ label: 'Estirable', icon: Layers, position: 'top-4 right-12', delay: 0 }, { label: 'Alimentario', icon: Shield, position: 'bottom-16 left-4', delay: 0.7 }, { label: 'Termoencogible', icon: Zap, position: 'bottom-4 right-20', delay: 1.3 }] },
 ];
 
 const localStats = [
@@ -592,7 +593,7 @@ export default function HomePageClient({
             <div className="w-px h-6 bg-border/60 shrink-0" />
             <div className="flex items-center gap-2 sm:gap-3">
               {categories.map((cat) => (
-                <Link key={cat.nombre} href={`/productos?categoria=${encodeURIComponent(cat.nombre)}`} className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-background border border-border/50 rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-all shrink-0 group">
+                <Link key={cat.nombre} href={getCleanCategoryPath(cat.nombre)} className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-background border border-border/50 rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-all shrink-0 group">
                   <cat.icon className={`w-4 h-4 ${cat.iconColor} group-hover:scale-110 transition-transform`} />
                   <span className="text-sm font-medium text-foreground/80 group-hover:text-primary whitespace-nowrap transition-colors">{cat.nombre}</span>
                   <span className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-md">{cat.count}</span>
@@ -631,7 +632,7 @@ export default function HomePageClient({
           <div ref={categoriesRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
             {categories.map((cat, i) => (
               <div key={cat.nombre} className="gsap-cat opacity-0">
-                <Link href={`/productos?categoria=${encodeURIComponent(cat.nombre)}`}>
+                <Link href={getCleanCategoryPath(cat.nombre)}>
                   <div className="group relative bg-card border border-border/50 rounded-2xl overflow-hidden hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300 hover:-translate-y-1 cursor-pointer">
                     <div className="relative w-full aspect-[16/9] overflow-hidden bg-muted/30">
                       <Image src={cat.image} alt={cat.nombre} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw" />

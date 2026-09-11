@@ -10,6 +10,7 @@ import { useFavoritesStore } from '@/lib/favorites-store';
 import FavoritesPanel from '@/components/favorites-panel';
 import products from '@/data/products.json';
 import { COMPANY } from '@/config/company';
+import { getCleanCategoryPath } from '@/lib/utils';
 
 const visibleProducts = products;
 
@@ -262,7 +263,7 @@ export default function Navbar() {
                       return (
                         <Link
                           key={cat}
-                          href={`/productos?categoria=${encodeURIComponent(cat)}`}
+                          href={getCleanCategoryPath(cat)}
                           onClick={() => setIsMobileMenuOpen(false)}
                           className="flex items-center gap-3 px-5 py-2.5 text-sm text-foreground/70 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
                         >
@@ -380,7 +381,7 @@ export default function Navbar() {
                     {categories.map((cat) => (
                       <Link
                         key={cat}
-                        href={`/productos?categoria=${encodeURIComponent(cat)}`}
+                        href={getCleanCategoryPath(cat)}
                         className="block px-4 py-2 text-sm text-foreground/80 hover:text-primary hover:bg-primary/5 transition-colors"
                       >
                         {cat}

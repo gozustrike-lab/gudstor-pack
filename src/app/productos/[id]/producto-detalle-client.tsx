@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useFavoritesStore } from '@/lib/favorites-store';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getCleanCategoryPath } from '@/lib/utils';
 import { COMPANY } from '@/config/company';
 import LightboxGallery from '@/components/lightbox-gallery';
 import SavingsMessage from '@/components/savings-message';
@@ -125,9 +125,11 @@ export default function ProductoDetalleClient({
   const rawProduct = visibleProducts.find((p) => p.id === id || p.slug === id);
   const product = rawProduct ? { ...rawProduct, imagenes: (rawProduct.imagenes || []).filter((img) => typeof img === 'string' && img.startsWith('https://')) } : undefined;
 
-  // ── Deep linking: read pack + medida from URL on mount ──
+  // ── Deep linking: read pack + medida from URL on mount once ──
+  const initializedFromUrl = useRef(false);
   useEffect(() => {
-    if (!product) return;
+    if (!product || initializedFromUrl.current) return;
+    initializedFromUrl.current = true;
     const packParam = searchParams.get('pack');
     const medidaParam = searchParams.get('medida');
     if (packParam) {
@@ -140,24 +142,8 @@ export default function ProductoDetalleClient({
         setSelectedMedida(decoded);
       }
     }
-  }, [product, searchParams]);
-
-  // ── Sync pack + medida → URL query params ──
-  useEffect(() => {
-    if (!product || isFirstRender.current) {
-      if (isFirstRender.current) isFirstRender.current = false;
-      return;
-    }
-    if (typeof window === 'undefined') return;
-    const urlParams = new URLSearchParams();
-    const pack = product.packs[selectedPackIndex];
-    if (pack) urlParams.set('pack', String(pack.cantidad));
-    const medida = selectedMedida || (product.medidas || [])[0];
-    urlParams.set('medida', encodeURIComponent(medida));
-    const qs = urlParams.toString();
-    const productSeoPath = product.seoPath && product.seoPath !== 'productos' ? `/${product.seoPath}` : `/productos`;
-    window.history.replaceState(null, '', `${productSeoPath}/${id}?${qs}`);
-  }, [product, id, selectedPackIndex, selectedMedida]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product]);
 
   const selectedPack =
     product?.packs?.[selectedPackIndex] ??
@@ -311,13 +297,13 @@ export default function ProductoDetalleClient({
     { min: 1000, max: null, label: '1,000+ uds', info: 'Envío industrial' },
   ];
 
-  // Category navigation items
+  // Category navigation items (Clean SEO URLs)
   const categoryItems = [
-    { name: 'Cajas', href: '/productos?categoria=Cajas', icon: Box },
-    { name: 'Films', href: '/productos?categoria=Films', icon: Layers },
-    { name: 'Cintas', href: '/productos?categoria=Cintas', icon: Ruler },
-    { name: 'Protección', href: '/productos?categoria=Protección', icon: CircleDot },
-    { name: 'Bolsas', href: '/productos?categoria=Bolsas', icon: ShoppingBag },
+    { name: 'Cajas', href: '/cajas-de-carton', icon: Box },
+    { name: 'Films', href: '/materiales-de-embalaje/stretch-film', icon: Layers },
+    { name: 'Cintas', href: '/materiales-de-embalaje/cintas-adhesivas', icon: Ruler },
+    { name: 'Protección', href: '/relleno-y-complementos', icon: CircleDot },
+    { name: 'Bolsas', href: '/bolsas', icon: ShoppingBag },
   ];
 
   return (
@@ -350,7 +336,7 @@ export default function ProductoDetalleClient({
             <ChevronRight className="w-3 h-3 shrink-0" />
             <Link href="/productos" className="hover:text-primary transition-colors shrink-0">Productos</Link>
             <ChevronRight className="w-3 h-3 shrink-0" />
-            <Link href={`/productos?categoria=${encodeURIComponent(product.categoria)}`} className="hover:text-primary transition-colors shrink-0">
+            <Link href={getCleanCategoryPath(product.categoria)} className="hover:text-primary transition-colors shrink-0">
               {product.categoria}
             </Link>
             <ChevronRight className="w-3 h-3 shrink-0" />
@@ -403,11 +389,11 @@ export default function ProductoDetalleClient({
               <div className="space-y-1">
                 {[
                   { name: 'Todos', href: '/productos', icon: LayoutGrid, activeClass: 'bg-primary text-primary-foreground', hoverClass: 'hover:bg-muted/60' },
-                  { name: 'Cajas', href: '/productos?categoria=Cajas', icon: Box, activeClass: 'bg-amber-500/10 text-amber-700 border-l-2 border-amber-500', hoverClass: 'hover:bg-amber-500/5' },
-                  { name: 'Films', href: '/productos?categoria=Films', icon: Layers, activeClass: 'bg-teal-500/10 text-teal-700 border-l-2 border-teal-500', hoverClass: 'hover:bg-teal-500/5' },
-                  { name: 'Cintas', href: '/productos?categoria=Cintas', icon: Ruler, activeClass: 'bg-blue-500/10 text-blue-700 border-l-2 border-blue-500', hoverClass: 'hover:bg-blue-500/5' },
-                  { name: 'Protección', href: '/productos?categoria=Protección', icon: CircleDot, activeClass: 'bg-purple-500/10 text-purple-700 border-l-2 border-purple-500', hoverClass: 'hover:bg-purple-500/5' },
-                  { name: 'Bolsas', href: '/productos?categoria=Bolsas', icon: ShoppingBag, activeClass: 'bg-green-500/10 text-green-700 border-l-2 border-green-500', hoverClass: 'hover:bg-green-500/5' },
+                  { name: 'Cajas', href: '/cajas-de-carton', icon: Box, activeClass: 'bg-amber-500/10 text-amber-700 border-l-2 border-amber-500', hoverClass: 'hover:bg-amber-500/5' },
+                  { name: 'Films', href: '/materiales-de-embalaje/stretch-film', icon: Layers, activeClass: 'bg-teal-500/10 text-teal-700 border-l-2 border-teal-500', hoverClass: 'hover:bg-teal-500/5' },
+                  { name: 'Cintas', href: '/materiales-de-embalaje/cintas-adhesivas', icon: Ruler, activeClass: 'bg-blue-500/10 text-blue-700 border-l-2 border-blue-500', hoverClass: 'hover:bg-blue-500/5' },
+                  { name: 'Protección', href: '/relleno-y-complementos', icon: CircleDot, activeClass: 'bg-purple-500/10 text-purple-700 border-l-2 border-purple-500', hoverClass: 'hover:bg-purple-500/5' },
+                  { name: 'Bolsas', href: '/bolsas', icon: ShoppingBag, activeClass: 'bg-green-500/10 text-green-700 border-l-2 border-green-500', hoverClass: 'hover:bg-green-500/5' },
                 ].map((cat) => {
                   const isActive = cat.name === 'Todos' ? false : cat.name === product.categoria;
                   const CatIcon = cat.icon;

@@ -21,6 +21,7 @@ import {
 import ProductCard from '@/components/product-card';
 import ImmersiveBanner from '@/components/immersive-banner';
 import { useScrollSpy } from '@/lib/use-scroll-spy';
+import { getCleanCategoryPath } from '@/lib/utils';
 import type { Product } from '@/lib/types';
 
 // Fallback type reference
@@ -387,18 +388,17 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
     }
   }, [searchParams]);
 
-  // ── Sync state → URL via Next.js router ──
+  // ── Sync state → Clean SEO URL ──
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    const params = new URLSearchParams();
-    if (selectedCategory) params.set('categoria', selectedCategory);
-    if (selectedSubcategory) params.set('subcategoria', selectedSubcategory);
-    const qs = params.toString();
-    router.replace(`/productos${qs ? `?${qs}` : ''}`, { scroll: false });
-  }, [selectedCategory, selectedSubcategory, router]);
+    const cleanPath = getCleanCategoryPath(selectedCategory, selectedSubcategory);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', cleanPath);
+    }
+  }, [selectedCategory, selectedSubcategory]);
 
   // ── Dynamic browser title + meta description ──
   useEffect(() => {
@@ -415,11 +415,8 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
     // Update canonical URL
     const canonEl = document.querySelector('link[rel="canonical"]');
     if (canonEl) {
-      const params = new URLSearchParams();
-      if (selectedCategory) params.set('categoria', selectedCategory);
-      if (selectedSubcategory) params.set('subcategoria', selectedSubcategory);
-      const qs = params.toString();
-      canonEl.setAttribute('href', `https://gudstor-pack.vercel.app/productos${qs ? `?${qs}` : ''}`);
+      const cleanPath = getCleanCategoryPath(selectedCategory, selectedSubcategory);
+      canonEl.setAttribute('href', `https://gudstor-pack.vercel.app${cleanPath}`);
     }
   }, [selectedCategory, selectedSubcategory]);
 

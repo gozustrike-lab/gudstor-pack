@@ -16,20 +16,21 @@ interface SavingsMessageProps {
 
 const tierConfig: Record<number, { emoji: string; message: string; submessage: string; nextHint?: string }> = {
   3: {
-    emoji: '\u2728',
-    message: 'Est\u00e1s ahorrando',
-    submessage: 'con este pack.',
+    emoji: '✨',
+    message: 'Estás ahorrando',
+    submessage: 'con este pack de 25 unidades.',
+    nextHint: '¡Llévate el Pack de 50 unidades y duplica tu descuento al -7%!',
   },
   7: {
-    emoji: '\uD83D\uDD25',
-    message: '\u00a1Gran elecci\u00f3n! Est\u00e1s ahorrando',
-    submessage: '\u00a1Ll\u00e9vate el Pack de 50 unidades y duplica tu descuento al -7%!',
-    nextHint: '\u00bfNecesitas m\u00e1s? Con el Pack de 100 unidades ahorras un -12%',
+    emoji: '🔥',
+    message: '¡Gran elección! Estás ahorrando',
+    submessage: 'con este pack de 50 unidades.',
+    nextHint: '¿Necesitas más? Con el Pack de 100 unidades ahorras un -12%',
   },
   12: {
-    emoji: '\uD83C\uDFAF',
-    message: '\u00a1M\u00e1ximo Ahorro Activado! Est\u00e1s ahorrando',
-    submessage: 'en esta compra.',
+    emoji: '🎯',
+    message: '¡Máximo Ahorro Activado! Estás ahorrando',
+    submessage: 'con este pack de 100 unidades.',
   },
 };
 

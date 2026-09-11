@@ -51,3 +51,42 @@ export function generateWhatsAppURL(items: CartItem[], customerData: CustomerDat
 
   return `https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(message)}`;
 }
+
+export function getCleanCategoryPath(category?: string, subcategory?: string): string {
+  if (!category || category === 'Todos') return '/productos';
+
+  const normCat = category.trim();
+  if (normCat === 'Cajas') {
+    if (subcategory === 'Archiveras') return '/cajas-de-carton/cajas-archiveras';
+    if (subcategory === 'Corrugadas') return '/cajas-de-carton/cajas-corrugadas';
+    if (subcategory === 'Doble Corrugado') return '/cajas-de-carton/cajas-doble-corrugadas';
+    if (subcategory === 'E-commerce') return '/cajas-de-carton/cajas-para-envios';
+    if (subcategory === 'Pizza') return '/cajas-de-carton/cajas-para-pizza';
+    return '/cajas-de-carton';
+  }
+  if (normCat === 'Films') {
+    return '/materiales-de-embalaje/stretch-film';
+  }
+  if (normCat === 'Cintas') {
+    return '/materiales-de-embalaje/cintas-adhesivas';
+  }
+  if (normCat === 'Protección') {
+    if (subcategory === 'Burbupack') return '/materiales-de-embalaje/plastico-burbuja';
+    if (subcategory === 'Cartón Corrugado') return '/materiales-de-embalaje/carton-corrugado';
+    if (subcategory === 'Planchas') return '/materiales-de-embalaje/plancha-de-tecnopor';
+    if (subcategory === 'Papel y Viruta') return '/relleno-y-complementos/viruta-de-papel';
+    return '/relleno-y-complementos';
+  }
+  if (normCat === 'Bolsas') {
+    return '/bolsas';
+  }
+  return '/productos';
+}
+
+export function getProductHref(product: { seoPath?: string; slug?: string; id?: string }): string {
+  const slug = product.slug || product.id || '';
+  if (product.seoPath && product.seoPath !== 'productos') {
+    return `/${product.seoPath}/${slug}`;
+  }
+  return `/productos/${slug}`;
+}

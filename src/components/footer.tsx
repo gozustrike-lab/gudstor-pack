@@ -10,11 +10,11 @@ interface FooterProps {
 
 const CATEGORIES = [
   { label: 'Packs Especiales', href: '/packs-especiales' },
-  { label: 'Cajas', href: '/productos?categoria=Cajas' },
-  { label: 'Films', href: '/productos?categoria=Films' },
-  { label: 'Cintas', href: '/productos?categoria=Cintas' },
-  { label: 'Protección', href: '/productos?categoria=Protección' },
-  { label: 'Bolsas', href: '/productos?categoria=Bolsas' },
+  { label: 'Cajas', href: '/cajas-de-carton' },
+  { label: 'Films', href: '/materiales-de-embalaje/stretch-film' },
+  { label: 'Cintas', href: '/materiales-de-embalaje/cintas-adhesivas' },
+  { label: 'Protección', href: '/relleno-y-complementos' },
+  { label: 'Bolsas', href: '/bolsas' },
 ];
 
 const ACCOUNT_LINKS = [
