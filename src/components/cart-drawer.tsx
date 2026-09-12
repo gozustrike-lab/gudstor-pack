@@ -230,7 +230,7 @@ export default function CartDrawer() {
                             <div className="flex flex-wrap items-center gap-1.5 mt-1">
                               {item.packSize && (
                                 <span className="inline-block px-2 py-0.5 text-[10px] font-bold bg-primary/10 text-primary rounded-md">
-                                  Pack {item.packSize} uds
+                                  Pack {item.packSize} {item.product?.unidadMedida || 'uds'}
                                 </span>
                               )}
                               {item.medida && (

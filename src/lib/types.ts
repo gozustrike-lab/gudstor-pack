@@ -2,6 +2,7 @@ export interface Pack {
   cantidad: number;      // 25, 50, 100
   precio: number;         // precio del pack
   descuento: number;      // porcentaje de descuento vs precio unitario
+  unidad?: string;        // opcional: 'UDS', 'KG', 'MTRS', 'ROLLOS', etc.
 }
 
 export interface Product {
@@ -19,8 +20,10 @@ export interface Product {
   medidas: string[];
   destacado: boolean;
   etiquetas: string[];
-  packs: Pack[];             // variantes obligatorias: 25, 50, 100 unidades
+  packs: Pack[];             // variantes: 25, 50, 100 unidades
   seoPath?: string;
+  unidadMedida?: string;     // 'UDS', 'KG', 'MTRS', 'ROLLOS', 'BOLSAS', 'PAQ'
+  faqs?: { q: string; a: string }[];
 }
 
 export interface Category {

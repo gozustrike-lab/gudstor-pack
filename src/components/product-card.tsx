@@ -219,7 +219,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                       : 'border-border hover:border-primary/30 text-foreground/60 hover:text-foreground'
                   }`}
                 >
-                  {pack.cantidad} uds
+                  {pack.cantidad} {pack.unidad || product.unidadMedida || 'uds'}
                   {pack.descuento > 0 && (
                     <span className="text-[9px] font-bold text-green-600">
                       -{pack.descuento}%
@@ -244,7 +244,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             <div className="flex items-end justify-between gap-3">
               <div>
                 <p className="text-xs text-muted-foreground mb-0.5">
-                  Desde · {selectedPack.cantidad} uds
+                  Desde · {selectedPack.cantidad} {selectedPack.unidad || product.unidadMedida || 'uds'}
                 </p>
                 <div className="flex items-center gap-1.5">
                   <p className="text-[10px] text-muted-foreground line-through">

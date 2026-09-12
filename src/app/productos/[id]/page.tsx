@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { fetchProducts } from "@/lib/fetchCMS";
+import { fetchProducts, fetchSiteSettings } from "@/lib/fetchCMS";
 import fallbackProducts from "@/data/products.json";
 import ProductoDetalleClient from "./producto-detalle-client";
 
@@ -41,8 +41,9 @@ export async function generateMetadata({
     const pack = (product.packs || []).find((p) => String(p.cantidad) === packParam);
     if (pack) {
       const unitPrice = (pack.precio / pack.cantidad).toFixed(2);
-      title = `${product.nombre} - Pack ${pack.cantidad} uds | GUDSTOR PACK`;
-      description = `${product.nombre}: Pack ${pack.cantidad} uds a S/ ${pack.precio.toFixed(2)} (S/ ${unitPrice}/u). ${pack.descuento > 0 ? `Ahorra ${pack.descuento}%.` : ''} Compra mayorista en GUDSTOR PACK.`;
+      const unit = pack.unidad || product.unidadMedida || 'uds';
+      title = `${product.nombre} - Pack ${pack.cantidad} ${unit} | GUDSTOR PACK`;
+      description = `${product.nombre}: Pack ${pack.cantidad} ${unit} a S/ ${pack.precio.toFixed(2)} (S/ ${unitPrice}/u). ${pack.descuento > 0 ? `Ahorra ${pack.descuento}%.` : ''} Compra mayorista en GUDSTOR PACK.`;
     }
   }
 
@@ -100,7 +101,10 @@ export default async function ProductoDetallePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const sanityProducts = await fetchProducts();
+  const [sanityProducts, siteSettings] = await Promise.all([
+    fetchProducts(),
+    fetchSiteSettings(),
+  ]);
   const finalProducts = (sanityProducts && sanityProducts.length > 0) ? sanityProducts : fallbackProducts;
 
   return (
@@ -111,7 +115,11 @@ export default async function ProductoDetallePage({
         </div>
       }
     >
-      <ProductoDetalleClient params={params} initialProducts={finalProducts as any} />
+      <ProductoDetalleClient
+        params={params}
+        initialProducts={finalProducts as any}
+        siteSettings={siteSettings}
+      />
     </Suspense>
   );
 }

@@ -179,6 +179,7 @@ export interface SiteSettings {
   footerCompanyLinks?: FooterLink[];
   footerHours?: string;
   socialLinks?: { platform: string; url: string }[];
+  categoryFaqs?: { categoria: string; faqs: { q: string; a: string }[] }[];
 }
 
 export interface HomeSection {

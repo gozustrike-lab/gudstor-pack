@@ -243,11 +243,11 @@ export default function CarritoPage() {
                                 </h3>
                               </Link>
                               <div className="flex flex-wrap gap-1.5 mt-1">
-                                {item.packSize && (
-                                  <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                                    Pack {item.packSize} uds
-                                  </span>
-                                )}
+                                  {item.packSize && (
+                                    <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                                      Pack {item.packSize} {item.product?.unidadMedida || 'uds'}
+                                    </span>
+                                  )}
                                 {item.medida && (
                                   <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
                                     {item.medida}

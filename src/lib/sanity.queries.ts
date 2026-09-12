@@ -92,7 +92,11 @@ export const siteSettingsQuery = groq`
     "trustItems": trustItems[] { icon, title, description, order },
     "footerCompanyLinks": footerCompanyLinks[] { title, href },
     footerHours,
-    seoTitle, seoDescription
+    seoTitle, seoDescription,
+    "categoryFaqs": categoryFaqs[] {
+      categoria,
+      "faqs": faqs[] { q, a }
+    }
   }
 `;
 
@@ -132,7 +136,11 @@ export const siteSettingsPreviewQuery = groq`
     "trustItems": trustItems[] { icon, title, description, order },
     "footerCompanyLinks": footerCompanyLinks[] { title, href },
     footerHours,
-    seoTitle, seoDescription
+    seoTitle, seoDescription,
+    "categoryFaqs": categoryFaqs[] {
+      categoria,
+      "faqs": faqs[] { q, a }
+    }
   }
 `;
 
@@ -195,13 +203,19 @@ export const allProductsQuery = groq`
     "imagenes": coalesce(imagenes[].asset->url, imagenes[].asset._ref, imagenes),
     colores,
     medidas,
+    unidadMedida,
     destacado,
     etiquetas,
     seoPath,
+    "faqs": faqs[] {
+      q,
+      a
+    },
     packs[] {
       cantidad,
       precio,
-      descuento
+      descuento,
+      unidad
     },
     order
   }
@@ -222,13 +236,19 @@ export const allProductsPreviewQuery = groq`
     "imagenes": coalesce(imagenes[].asset->url, imagenes[].asset._ref, imagenes),
     colores,
     medidas,
+    unidadMedida,
     destacado,
     etiquetas,
     seoPath,
+    "faqs": faqs[] {
+      q,
+      a
+    },
     packs[] {
       cantidad,
       precio,
-      descuento
+      descuento,
+      unidad
     },
     order
   }

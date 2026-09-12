@@ -99,6 +99,43 @@ export default defineType({
         },
       ],
     }),
+
+    // ── Preguntas Frecuentes por Categoría (Predeterminadas) ──
+    defineField({
+      name: 'categoryFaqs',
+      title: 'Preguntas Frecuentes por Categoría (Predeterminadas)',
+      description: 'Preguntas frecuentes que se muestran por defecto en los productos según su categoría si no tienen preguntas específicas.',
+      type: 'array',
+      of: [{
+        type: 'object',
+        fields: [
+          defineField({
+            name: 'categoria',
+            title: 'Categoría',
+            type: 'string',
+            options: { list: ['Cajas', 'Films', 'Cintas', 'Protección', 'Bolsas'] },
+            validation: (r) => r.required(),
+          }),
+          defineField({
+            name: 'faqs',
+            title: 'Preguntas y Respuestas',
+            type: 'array',
+            of: [{
+              type: 'object',
+              fields: [
+                defineField({ name: 'q', title: 'Pregunta', type: 'string', validation: (r) => r.required() }),
+                defineField({ name: 'a', title: 'Respuesta', type: 'text', rows: 3, validation: (r) => r.required() }),
+              ],
+              preview: { select: { title: 'q', subtitle: 'a' } },
+            }],
+          }),
+        ],
+        preview: {
+          select: { title: 'categoria' },
+          prepare: ({ title }) => ({ title: `FAQs de ${title}` }),
+        },
+      }],
+    }),
   ],
   preview: { select: { title: 'companyName' } },
 });

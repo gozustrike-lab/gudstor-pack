@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SlidersHorizontal,
@@ -21,7 +21,7 @@ import {
 import ProductCard from '@/components/product-card';
 import ImmersiveBanner from '@/components/immersive-banner';
 import { useScrollSpy } from '@/lib/use-scroll-spy';
-import { getCleanCategoryPath } from '@/lib/utils';
+import { getCleanCategoryPath, getCategoryAndSubcategoryFromPath } from '@/lib/utils';
 import type { Product } from '@/lib/types';
 
 // Fallback type reference
@@ -354,14 +354,16 @@ function CategorySidebar({
 // ── Main Content ───────────────────────────────────────────────────
 export default function ProductosContent({ initialProducts }: { initialProducts: typeof visibleProducts }) {
   const searchParams = useSearchParams();
-
-  // ── Read URL params on mount (deep linking from WhatsApp/shared links) ──
-  const categoriaParam = searchParams.get('categoria') || '';
-  const subcategoriaParam = searchParams.get('subcategoria') || '';
-
+  const pathname = usePathname();
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState(categoriaParam);
-  const [selectedSubcategory, setSelectedSubcategory] = useState(subcategoriaParam);
+
+  // ── Read URL params and clean path on mount / render ──
+  const initialParams = useMemo(() => {
+    return getCategoryAndSubcategoryFromPath(pathname, searchParams);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [selectedCategory, setSelectedCategory] = useState(initialParams.category);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(initialParams.subcategory);
   const [sortBy, setSortBy] = useState('nombre');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'comfort' | 'compact' | 'list'>('comfort');
@@ -372,10 +374,9 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
     offset: '100px',
   });
 
-  // ── Sync URL searchParams → state (footer links, navbar dropdown links, back/forward navigation) ──
+  // ── Sync URL changes (when pathname or searchParams change via router.push or link click) ──
   useEffect(() => {
-    const cat = searchParams.get('categoria') || '';
-    const sub = searchParams.get('subcategoria') || '';
+    const { category: cat, subcategory: sub } = getCategoryAndSubcategoryFromPath(pathname, searchParams);
     setSelectedCategory(cat);
     setSelectedSubcategory(sub);
     if (!isFirstRender.current && typeof window !== 'undefined') {
@@ -386,16 +387,16 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
-  }, [searchParams]);
+  }, [pathname, searchParams]);
 
-  // ── Sync state → Clean SEO URL ──
+  // ── Sync state → Clean SEO URL when state changes directly ──
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
     const cleanPath = getCleanCategoryPath(selectedCategory, selectedSubcategory);
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.location.pathname !== cleanPath) {
       window.history.replaceState(null, '', cleanPath);
     }
   }, [selectedCategory, selectedSubcategory]);
@@ -445,7 +446,7 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
     });
 
     return result;
-  }, [selectedCategory, selectedSubcategory, sortBy]);
+  }, [selectedCategory, selectedSubcategory, sortBy, initialProducts]);
 
   // Ref to always read latest state inside stable callbacks (prevents stale closures)
   const filterRef = useRef({ selectedCategory: '', selectedSubcategory: '' });
@@ -466,29 +467,37 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
     if (cat === prev) {
       setSelectedCategory('');
       setSelectedSubcategory('');
+      router.push('/productos', { scroll: false });
     } else {
       setSelectedCategory(cat);
       setSelectedSubcategory('');
+      const targetPath = getCleanCategoryPath(cat);
+      router.push(targetPath, { scroll: false });
     }
     scrollToCatalog();
-  }, []);
+  }, [router]);
 
   const handleSubcategoryClick = useCallback((cat: string, sub: string) => {
     const { selectedCategory: prevCat, selectedSubcategory: prevSub } = filterRef.current;
     if (sub === prevSub && cat === prevCat) {
       setSelectedSubcategory('');
+      const targetPath = getCleanCategoryPath(cat);
+      router.push(targetPath, { scroll: false });
     } else {
       setSelectedCategory(cat);
       setSelectedSubcategory(sub);
+      const targetPath = getCleanCategoryPath(cat, sub);
+      router.push(targetPath, { scroll: false });
     }
     scrollToCatalog();
-  }, []);
+  }, [router]);
 
   const clearAll = useCallback(() => {
     setSelectedCategory('');
     setSelectedSubcategory('');
+    router.push('/productos', { scroll: false });
     scrollToCatalog();
-  }, []);
+  }, [router]);
 
   const activeFiltersCount = (selectedCategory ? 1 : 0) + (selectedSubcategory ? 1 : 0);
 

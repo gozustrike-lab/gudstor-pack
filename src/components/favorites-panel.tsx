@@ -146,7 +146,7 @@ export default function FavoritesPanel({ isOpen, onClose }: FavoritesPanelProps)
                                       {item.product.categoria}
                                     </span>
                                     <span className="text-[10px] text-primary font-medium bg-primary/8 px-1.5 py-0.5 rounded">
-                                      {item.selectedPack} uds
+                                      {item.selectedPack} {item.product.unidadMedida || 'uds'}
                                     </span>
                                   </div>
                                 </div>
@@ -162,7 +162,7 @@ export default function FavoritesPanel({ isOpen, onClose }: FavoritesPanelProps)
                               {/* Price */}
                               <div className="mt-2">
                                 <p className="text-xs text-muted-foreground">
-                                  Pack {item.selectedPack} uds:
+                                  Pack {item.selectedPack} {item.product.unidadMedida || 'uds'}:
                                 </p>
                                 <p className="text-base font-extrabold text-primary">
                                   {pack

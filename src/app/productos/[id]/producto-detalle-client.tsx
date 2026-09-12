@@ -97,9 +97,11 @@ function RelatedProductsCarousel({ products: rpList }: { products: any[] }) {
 export default function ProductoDetalleClient({
   params,
   initialProducts,
+  siteSettings,
 }: {
   params: Promise<{ id: string }>;
   initialProducts: any[];
+  siteSettings?: any;
 }) {
   const visibleProducts = initialProducts;
   const { id } = use(params);
@@ -185,7 +187,7 @@ export default function ProductoDetalleClient({
       `📦 ${product.nombre}`,
       `📐 Medida: ${medida}`,
       `🎨 Color: ${color}`,
-      `📦 Pack: ${selectedPack.cantidad} unidades`,
+      `📦 Pack: ${selectedPack.cantidad} ${selectedPack.unidad || product.unidadMedida || 'unidades'}`,
       `💰 Precio: ${formatPrice(selectedPack.precio)}`,
       `🔢 Cantidad: ${quantity} pack${quantity > 1 ? 's' : ''}`,
       `💵 Total: ${formatPrice(selectedPack.precio * quantity)}`,
@@ -279,7 +281,15 @@ export default function ProductoDetalleClient({
     ],
   };
 
-  const productFAQs = categoryFAQs[product.categoria] || categoryFAQs['Cajas'];
+  const cmsCategoryFaqs = siteSettings?.categoryFaqs?.find(
+    (cf: any) => cf.categoria === product.categoria
+  )?.faqs;
+
+  const productFAQs = (product.faqs && product.faqs.length > 0)
+    ? product.faqs
+    : (cmsCategoryFaqs && cmsCategoryFaqs.length > 0)
+    ? cmsCategoryFaqs
+    : (categoryFAQs[product.categoria] || categoryFAQs['Cajas']);
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'descripcion', label: 'Descripción' },
@@ -289,12 +299,13 @@ export default function ProductoDetalleClient({
   ];
 
   // Shipping tiers
+  const unitLabel = product.unidadMedida || 'uds';
   const shippingTiers = [
-    { min: 25, max: 49, label: '25 - 49 uds', info: 'Envío estándar' },
-    { min: 50, max: 99, label: '50 - 99 uds', info: 'Envío económico' },
-    { min: 100, max: 499, label: '100 - 499 uds', info: 'Envío mayorista' },
-    { min: 500, max: 999, label: '500 - 999 uds', info: 'Envío distribuidor' },
-    { min: 1000, max: null, label: '1,000+ uds', info: 'Envío industrial' },
+    { min: 25, max: 49, label: `25 - 49 ${unitLabel}`, info: 'Envío estándar' },
+    { min: 50, max: 99, label: `50 - 99 ${unitLabel}`, info: 'Envío económico' },
+    { min: 100, max: 499, label: `100 - 499 ${unitLabel}`, info: 'Envío mayorista' },
+    { min: 500, max: 999, label: `500 - 999 ${unitLabel}`, info: 'Envío distribuidor' },
+    { min: 1000, max: null, label: `1,000+ ${unitLabel}`, info: 'Envío industrial' },
   ];
 
   // Category navigation items (Clean SEO URLs)
@@ -532,6 +543,7 @@ export default function ProductoDetalleClient({
               selectedPack={selectedPack}
               basePrice={product.precio}
               allPacks={product.packs}
+              unit={selectedPack.unidad || product.unidadMedida || 'unidades'}
             />
 
             {/* Pack Selector */}
@@ -560,7 +572,7 @@ export default function ProductoDetalleClient({
                       </p>
                       <div className="flex items-center justify-center gap-1.5 mt-0.5">
                         <p className="text-[10px] text-foreground/70 uppercase font-medium">
-                          {pack.cantidad} UDS
+                          {pack.cantidad} {pack.unidad || product.unidadMedida || 'UDS'}
                         </p>
                         {pack.descuento > 0 && (
                           <span className="inline-block px-1.5 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 rounded-md">
@@ -673,7 +685,7 @@ export default function ProductoDetalleClient({
                         ['Categoría', product.categoria],
                         ['Medidas disponibles', product.medidas.join(', ')],
                         ['Colores disponibles', product.colores.join(', ')],
-                        ['Packs disponibles', (product.packs || []).map(p => `${p.cantidad} uds (-${p.descuento}%)`).join(', ')],
+                        ['Packs disponibles', (product.packs || []).map(p => `${p.cantidad} ${p.unidad || product.unidadMedida || 'uds'} (-${p.descuento}%)`).join(', ')],
                       ].map(([label, value]) => (
                         <div key={label} className="flex justify-between py-2.5 border-b border-border/30 text-sm">
                           <span className="text-muted-foreground">{label}</span>
@@ -896,6 +908,7 @@ export default function ProductoDetalleClient({
               selectedPack={selectedPack}
               basePrice={product.precio}
               allPacks={product.packs}
+              unit={selectedPack.unidad || product.unidadMedida || 'unidades'}
             />
 
             {/* Pack Selector — compact for mobile */}
@@ -920,7 +933,7 @@ export default function ProductoDetalleClient({
                       </p>
                       <p className="text-sm font-extrabold text-primary">{formatPrice(pack.precio)}</p>
                       <div className="flex items-center justify-center gap-1 mt-0.5">
-                        <span className="text-[9px] text-foreground/70 uppercase font-medium">{pack.cantidad} UDS</span>
+                        <span className="text-[9px] text-foreground/70 uppercase font-medium">{pack.cantidad} {pack.unidad || product.unidadMedida || 'UDS'}</span>
                         {pack.descuento > 0 && (
                           <span className="text-[9px] font-bold text-primary">-{pack.descuento}%</span>
                         )}
@@ -1029,7 +1042,7 @@ export default function ProductoDetalleClient({
                         ['Categoría', product.categoria],
                         ['Medidas', product.medidas.join(', ')],
                         ['Colores', product.colores.join(', ')],
-                        ['Packs', (product.packs || []).map(p => `${p.cantidad} uds (-${p.descuento}%)`).join(', ')],
+                        ['Packs', (product.packs || []).map(p => `${p.cantidad} ${p.unidad || product.unidadMedida || 'uds'} (-${p.descuento}%)`).join(', ')],
                       ].map(([label, value]) => (
                         <div key={label} className="flex justify-between py-2 border-b border-border/30 text-xs">
                           <span className="text-muted-foreground">{label}</span>

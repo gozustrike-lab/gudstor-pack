@@ -12,34 +12,33 @@ interface SavingsMessageProps {
   selectedPack: PackInfo | null;
   basePrice: number;
   allPacks: PackInfo[];
+  unit?: string;
 }
 
-const tierConfig: Record<number, { emoji: string; message: string; submessage: string; nextHint?: string }> = {
+const tierConfig: Record<number, { emoji: string; message: string }> = {
   3: {
     emoji: '✨',
     message: 'Estás ahorrando',
-    submessage: 'con este pack de 25 unidades.',
-    nextHint: '¡Llévate el Pack de 50 unidades y duplica tu descuento al -7%!',
   },
   7: {
     emoji: '🔥',
     message: '¡Gran elección! Estás ahorrando',
-    submessage: 'con este pack de 50 unidades.',
-    nextHint: '¿Necesitas más? Con el Pack de 100 unidades ahorras un -12%',
   },
   12: {
     emoji: '🎯',
     message: '¡Máximo Ahorro Activado! Estás ahorrando',
-    submessage: 'con este pack de 100 unidades.',
   },
 };
 
-export default function SavingsMessage({ selectedPack, basePrice, allPacks }: SavingsMessageProps) {
+export default function SavingsMessage({ selectedPack, basePrice, allPacks, unit }: SavingsMessageProps) {
   if (!selectedPack || selectedPack.descuento <= 0) return null;
 
-  const tier = tierConfig[selectedPack.descuento];
-  if (!tier) return null;
+  const tier = tierConfig[selectedPack.descuento] || {
+    emoji: '✨',
+    message: 'Estás ahorrando',
+  };
 
+  const unitLabel = (unit || 'unidades').toLowerCase();
   const originalTotal = basePrice * selectedPack.cantidad;
   const savings = originalTotal - selectedPack.precio;
   const savingsFormatted = savings.toFixed(2);
@@ -64,19 +63,14 @@ export default function SavingsMessage({ selectedPack, basePrice, allPacks }: Sa
           <span className="font-semibold text-amber-900">
             {tier.message}{' '}
             <span className="text-green-700 font-bold">S/ {savingsFormatted}</span>{' '}
-            {tier.submessage}
+            con este pack de {selectedPack.cantidad} {unitLabel}.
           </span>
         </p>
 
-        {/* Show upsell hint when there is a better pack and no static nextHint */}
-        {!tier.nextHint && nextBetterPack && (
+        {/* Show upsell hint when there is a better pack */}
+        {nextBetterPack && (
           <p className="text-[11px] sm:text-xs text-amber-800 mt-2 font-medium">
-            {'\u00bfNecesitas m\u00e1s? Con el Pack de '}{nextBetterPack.cantidad}{' unidades ahorras un -'}{nextBetterPack.descuento}{'%'}
-          </p>
-        )}
-        {tier.nextHint && (
-          <p className="text-[11px] sm:text-xs text-amber-800 mt-2 font-medium">
-            {tier.nextHint}
+            ¿Necesitas más? Con el Pack de {nextBetterPack.cantidad} {unitLabel} ahorras un -{nextBetterPack.descuento}%
           </p>
         )}
       </motion.div>

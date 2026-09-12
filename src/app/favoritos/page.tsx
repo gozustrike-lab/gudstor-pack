@@ -210,7 +210,7 @@ export default function FavoritosPage() {
                         {pack && (
                           <div className="absolute bottom-3 left-3">
                             <span className="inline-flex items-center px-2 py-1 text-[10px] font-semibold bg-primary/90 text-primary-foreground rounded-lg">
-                              Pack {pack.cantidad} uds · -{pack.descuento}%
+                              Pack {pack.cantidad} {product.unidadMedida || 'uds'} · -{pack.descuento}%
                             </span>
                           </div>
                         )}
@@ -254,7 +254,7 @@ export default function FavoritosPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-xs text-muted-foreground mb-0.5">
-                              Pack {pack?.cantidad} uds
+                              Pack {pack?.cantidad} {product.unidadMedida || 'uds'}
                             </p>
                             <p className="text-xl font-extrabold text-primary">
                               {pack ? formatPrice(pack.precio) : formatPrice(product.precio * 25)}

@@ -90,3 +90,93 @@ export function getProductHref(product: { seoPath?: string; slug?: string; id?: 
   }
   return `/productos/${slug}`;
 }
+
+export function getCategoryAndSubcategoryFromPath(
+  pathname: string = '',
+  searchParams?: { get: (key: string) => string | null } | null
+): { category: string; subcategory: string } {
+  // 1. If explicit query params exist, use them
+  const qCat = searchParams?.get('categoria');
+  const qSub = searchParams?.get('subcategoria');
+  if (qCat) {
+    return { category: qCat, subcategory: qSub || '' };
+  }
+
+  // 2. Parse clean pathname
+  const cleanPath = (pathname || '').replace(/\/+$/, '').toLowerCase();
+
+  // Cajas
+  if (cleanPath === '/cajas-de-carton/cajas-archiveras') {
+    return { category: 'Cajas', subcategory: 'Archiveras' };
+  }
+  if (cleanPath === '/cajas-de-carton/cajas-corrugadas') {
+    return { category: 'Cajas', subcategory: 'Corrugadas' };
+  }
+  if (cleanPath === '/cajas-de-carton/cajas-doble-corrugadas') {
+    return { category: 'Cajas', subcategory: 'Doble Corrugado' };
+  }
+  if (cleanPath === '/cajas-de-carton/cajas-para-envios') {
+    return { category: 'Cajas', subcategory: 'E-commerce' };
+  }
+  if (cleanPath === '/cajas-de-carton/cajas-para-pizza') {
+    return { category: 'Cajas', subcategory: 'Pizza' };
+  }
+  if (cleanPath === '/cajas-de-carton' || cleanPath === '/cajas-especiales') {
+    return { category: 'Cajas', subcategory: '' };
+  }
+
+  // Films
+  if (
+    cleanPath === '/materiales-de-embalaje/stretch-film' ||
+    cleanPath === '/films'
+  ) {
+    return { category: 'Films', subcategory: '' };
+  }
+
+  // Cintas
+  if (
+    cleanPath === '/materiales-de-embalaje/cintas-adhesivas' ||
+    cleanPath === '/cintas'
+  ) {
+    return { category: 'Cintas', subcategory: '' };
+  }
+
+  // Protección
+  if (cleanPath === '/materiales-de-embalaje/plastico-burbuja') {
+    return { category: 'Protección', subcategory: 'Burbupack' };
+  }
+  if (cleanPath === '/materiales-de-embalaje/carton-corrugado') {
+    return { category: 'Protección', subcategory: 'Cartón Corrugado' };
+  }
+  if (
+    cleanPath === '/materiales-de-embalaje/plancha-de-carton' ||
+    cleanPath === '/materiales-de-embalaje/plancha-de-tecnopor' ||
+    cleanPath === '/relleno-y-complementos/relleno-de-tecnopor'
+  ) {
+    return { category: 'Protección', subcategory: 'Planchas' };
+  }
+  if (
+    cleanPath === '/relleno-y-complementos/viruta-de-papel' ||
+    cleanPath === '/relleno-y-complementos/papel-seda-mantequilla' ||
+    cleanPath === '/relleno-y-complementos/papel-con-diseño'
+  ) {
+    return { category: 'Protección', subcategory: 'Papel y Viruta' };
+  }
+  if (
+    cleanPath === '/relleno-y-complementos' ||
+    cleanPath === '/proteccion' ||
+    cleanPath === '/materiales-de-embalaje/herramientas-y-accesorios' ||
+    cleanPath === '/relleno-y-complementos/soguilla' ||
+    cleanPath === '/relleno-y-complementos/stickers'
+  ) {
+    return { category: 'Protección', subcategory: '' };
+  }
+
+  // Bolsas
+  if (cleanPath === '/bolsas') {
+    return { category: 'Bolsas', subcategory: '' };
+  }
+
+  return { category: '', subcategory: '' };
+}
+
