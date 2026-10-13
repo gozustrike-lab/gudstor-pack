@@ -194,19 +194,73 @@ export const allProductsQuery = groq`
     "id": _id,
     nombre,
     "slug": slug.current,
+    slugsAnteriores,
     descripcion,
+    descripcionCorta,
+    descripcionLarga,
     precio,
+    precioAnterior,
     "precioUnidad": "S/ " + string(precio),
     stock,
+    sku,
     categoria,
+    subcategoria,
     material,
-    "imagenes": coalesce(imagenes[].asset->url, imagenes[].asset._ref, imagenes),
+    "imagenes": imagenes[] {
+      "url": coalesce(asset->url, asset._ref, @),
+      "alt": alt
+    },
     colores,
     medidas,
     unidadMedida,
     destacado,
     etiquetas,
     seoPath,
+    tieneVariaciones,
+    atributos[] {
+      nombre,
+      modificaPrecio,
+      valores
+    },
+    variaciones[] {
+      titulo,
+      atributos[] {
+        nombre,
+        valor
+      },
+      precio,
+      precioAnterior,
+      stock,
+      sku,
+      "imagen": coalesce(imagen.asset->url, imagen.asset._ref),
+      medidas,
+      peso,
+      disponible,
+      packs[] {
+        cantidad,
+        precio,
+        descuento,
+        unidad
+      }
+    },
+    especificaciones[] {
+      nombre,
+      valor
+    },
+    envio {
+      info,
+      zonas,
+      tiempos,
+      condiciones,
+      costo
+    },
+    seoTitle,
+    metaDescription,
+    canonical,
+    noIndex,
+    ogTitle,
+    ogDescription,
+    "ogImage": ogImage.asset->url,
     "faqs": faqs[] {
       q,
       a
@@ -227,19 +281,73 @@ export const allProductsPreviewQuery = groq`
     "id": _id,
     nombre,
     "slug": slug.current,
+    slugsAnteriores,
     descripcion,
+    descripcionCorta,
+    descripcionLarga,
     precio,
+    precioAnterior,
     "precioUnidad": "S/ " + string(precio),
     stock,
+    sku,
     categoria,
+    subcategoria,
     material,
-    "imagenes": coalesce(imagenes[].asset->url, imagenes[].asset._ref, imagenes),
+    "imagenes": imagenes[] {
+      "url": coalesce(asset->url, asset._ref, @),
+      "alt": alt
+    },
     colores,
     medidas,
     unidadMedida,
     destacado,
     etiquetas,
     seoPath,
+    tieneVariaciones,
+    atributos[] {
+      nombre,
+      modificaPrecio,
+      valores
+    },
+    variaciones[] {
+      titulo,
+      atributos[] {
+        nombre,
+        valor
+      },
+      precio,
+      precioAnterior,
+      stock,
+      sku,
+      "imagen": coalesce(imagen.asset->url, imagen.asset._ref),
+      medidas,
+      peso,
+      disponible,
+      packs[] {
+        cantidad,
+        precio,
+        descuento,
+        unidad
+      }
+    },
+    especificaciones[] {
+      nombre,
+      valor
+    },
+    envio {
+      info,
+      zonas,
+      tiempos,
+      condiciones,
+      costo
+    },
+    seoTitle,
+    metaDescription,
+    canonical,
+    noIndex,
+    ogTitle,
+    ogDescription,
+    "ogImage": ogImage.asset->url,
     "faqs": faqs[] {
       q,
       a
@@ -251,5 +359,99 @@ export const allProductsPreviewQuery = groq`
       unidad
     },
     order
+  }
+`;
+
+export const allCategoriesQuery = groq`
+  *[_type == "category" && !(_id in path("drafts.**"))] | order(order asc) {
+    _id,
+    "id": _id,
+    nombre,
+    "slug": slug.current,
+    icon,
+    order,
+    heroTitle,
+    heroDescription,
+    "heroImage": heroImage.asset->url,
+    heroImageAlt,
+    heroCtaText,
+    heroCtaLink,
+    h1,
+    introDescription,
+    bottomSeoText,
+    seoTitle,
+    metaDescription,
+    canonical,
+    noIndex,
+    "ogImage": ogImage.asset->url
+  }
+`;
+
+export const allCategoriesPreviewQuery = groq`
+  *[_type == "category"] | order(order asc) {
+    _id,
+    "id": _id,
+    nombre,
+    "slug": slug.current,
+    icon,
+    order,
+    heroTitle,
+    heroDescription,
+    "heroImage": heroImage.asset->url,
+    heroImageAlt,
+    heroCtaText,
+    heroCtaLink,
+    h1,
+    introDescription,
+    bottomSeoText,
+    seoTitle,
+    metaDescription,
+    canonical,
+    noIndex,
+    "ogImage": ogImage.asset->url
+  }
+`;
+
+export const allSubcategoriesQuery = groq`
+  *[_type == "subcategory" && !(_id in path("drafts.**"))] | order(order asc) {
+    _id,
+    "id": _id,
+    nombre,
+    "slug": slug.current,
+    "categoria": categoria->nombre,
+    "categoriaSlug": categoria->slug.current,
+    order,
+    heroTitle,
+    heroDescription,
+    "heroImage": heroImage.asset->url,
+    h1,
+    introDescription,
+    bottomSeoText,
+    seoTitle,
+    metaDescription,
+    canonical,
+    noIndex
+  }
+`;
+
+export const allSubcategoriesPreviewQuery = groq`
+  *[_type == "subcategory"] | order(order asc) {
+    _id,
+    "id": _id,
+    nombre,
+    "slug": slug.current,
+    "categoria": categoria->nombre,
+    "categoriaSlug": categoria->slug.current,
+    order,
+    heroTitle,
+    heroDescription,
+    "heroImage": heroImage.asset->url,
+    h1,
+    introDescription,
+    bottomSeoText,
+    seoTitle,
+    metaDescription,
+    canonical,
+    noIndex
   }
 `;

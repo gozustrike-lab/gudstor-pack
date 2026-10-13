@@ -67,28 +67,41 @@ function RelatedProductsCarousel({ products: rpList }: { products: any[] }) {
         }}
         className="pb-10 [&_.swiper-button-next]:right-1 [&_.swiper-button-prev]:left-1 [&_.swiper-button-next]:w-8 [&_.swiper-button-prev]:w-8 [&_.swiper-button-next]:h-8 [&_.swiper-button-prev]:h-8 [&_.swiper-button-next]:rounded-full [&_.swiper-button-prev]:rounded-full [&_.swiper-button-next]:border [&_.swiper-button-prev]:border [&_.swiper-button-next]:border-border/50 [&_.swiper-button-prev]:border-border/50 [&_.swiper-button-next]:bg-white/90 [&_.swiper-button-prev]:bg-white/90 [&_.swiper-button-next]:backdrop-blur-sm [&_.swiper-button-prev]:backdrop-blur-sm [&_.swiper-button-next]:shadow-sm [&_.swiper-button-prev]:shadow-sm [&_.swiper-button-next]:top-1/2 [&_.swiper-button-prev]:top-1/2 [&_.swiper-button-next]:-translate-y-1/2 [&_.swiper-button-prev]:-translate-y-1/2 [&_.swiper-button-next]:z-10 [&_.swiper-button-prev]:z-10 [&_.swiper-button-next]:after:text-foreground/70 [&_.swiper-button-prev]:after:text-foreground/70 [&_.swiper-button-next]:after:text-sm [&_.swiper-button-prev]:after:text-sm [&_.swiper-button-next]:hover:bg-muted/50 [&_.swiper-button-prev]:hover:bg-muted/50 sm:[&_.swiper-button-next]:right-0 sm:[&_.swiper-button-prev]:left-0 sm:[&_.swiper-button-next]:w-9 sm:[&_.swiper-button-prev]:w-9 sm:[&_.swiper-button-next]:h-9 sm:[&_.swiper-button-prev]:h-9"
       >
-        {rpList.map((rp) => (
-          <SwiperSlide key={rp.id}>
-            <Link href={rp.seoPath && rp.seoPath !== 'productos' ? `/${rp.seoPath}/${rp.slug}` : `/productos/${rp.slug}`} className="block">
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="group bg-card border border-border/50 rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div data-rp-card className="aspect-[4/3] bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-                  <Package className="w-8 h-8 sm:w-10 sm:h-10 text-primary/30" />
-                </div>
-                <div className="p-2.5 sm:p-3">
-                  <h3 className="text-[11px] sm:text-xs font-bold text-foreground group-hover:text-primary truncate">{rp.nombre}</h3>
-                  <p className="text-sm sm:text-lg font-extrabold text-primary mt-0.5 sm:mt-1">
-                    {formatPrice((rp.packs || [])[0].precio / (rp.packs || [])[0].cantidad)}/u
-                  </p>
-                </div>
-              </motion.div>
-            </Link>
-          </SwiperSlide>
-        ))}
+        {rpList.map((rp) => {
+          const rpImg = rp.imagenes?.find((img: any) => typeof img === 'string' && img.startsWith('http')) || rp.imagenes?.[0];
+          return (
+            <SwiperSlide key={rp.id}>
+              <Link href={`/productos/${rp.slug || rp.id}`} className="block">
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="group bg-card border border-border/50 rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-md transition-shadow"
+                >
+                  <div data-rp-card className="aspect-[4/3] bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center relative overflow-hidden">
+                    {rpImg ? (
+                      <Image
+                        src={rpImg}
+                        alt={rp.nombre}
+                        fill
+                        className="object-contain p-2"
+                        sizes="(max-width: 640px) 50vw, 20vw"
+                      />
+                    ) : (
+                      <Package className="w-8 h-8 sm:w-10 sm:h-10 text-primary/30" />
+                    )}
+                  </div>
+                  <div className="p-2.5 sm:p-3">
+                    <h3 className="text-[11px] sm:text-xs font-bold text-foreground group-hover:text-primary truncate">{rp.nombre}</h3>
+                    <p className="text-sm sm:text-lg font-extrabold text-primary mt-0.5 sm:mt-1">
+                      {formatPrice((rp.packs || [])[0]?.precio ? (rp.packs || [])[0].precio / (rp.packs || [])[0].cantidad : rp.precio || 0)}/u
+                    </p>
+                  </div>
+                </motion.div>
+              </Link>
+            </SwiperSlide>
+          );
+        })}
       </Swiper>
     </section>
   );
@@ -124,8 +137,101 @@ export default function ProductoDetalleClient({
   const isFavorite = useFavoritesStore((s) => s.isFavorite(id));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
 
-  const rawProduct = visibleProducts.find((p) => p.id === id || p.slug === id);
-  const product = rawProduct ? { ...rawProduct, imagenes: (rawProduct.imagenes || []).filter((img) => typeof img === 'string' && img.startsWith('https://')) } : undefined;
+  const rawProduct = visibleProducts.find((p) => p.id === id || p.slug === id || p.slugsAnteriores?.includes(id));
+  const product = rawProduct
+    ? {
+        ...rawProduct,
+        imagenes: (rawProduct.imagenes || []).filter((img: any) => typeof img === 'string' && img.startsWith('http')),
+      }
+    : undefined;
+
+  // ── Variaciones y Atributos ──
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (product?.tieneVariaciones && product.atributos && product.atributos.length > 0) {
+      const initial: Record<string, string> = {};
+      const firstVar = product.variaciones?.[0];
+      if (firstVar && Array.isArray(firstVar.atributos)) {
+        firstVar.atributos.forEach((attr: any) => {
+          initial[attr.nombre] = attr.valor;
+        });
+      } else {
+        product.atributos.forEach((attr: any) => {
+          if (attr.valores && attr.valores.length > 0) {
+            initial[attr.nombre] = attr.valores[0];
+          }
+        });
+      }
+      setSelectedAttributes(initial);
+    }
+  }, [product]);
+
+  const activeVariation = useMemo(() => {
+    if (!product?.tieneVariaciones || !product.variaciones || product.variaciones.length === 0) {
+      return null;
+    }
+    return (
+      product.variaciones.find((v: any) => {
+        return Object.entries(selectedAttributes).every(([attrName, attrVal]) => {
+          const match = v.atributos?.find(
+            (a: any) => a.nombre.toLowerCase() === attrName.toLowerCase()
+          );
+          return match ? match.valor === attrVal : true;
+        });
+      }) || product.variaciones[0]
+    );
+  }, [product, selectedAttributes]);
+
+  const currentBasePrice = activeVariation?.precio ?? product?.precio ?? 0;
+  const currentOldPrice = activeVariation?.precioAnterior ?? product?.precioAnterior;
+  const currentSku = activeVariation?.sku || product?.sku;
+  const currentStock = activeVariation?.stock ?? product?.stock ?? 100;
+  const isAvailable = activeVariation
+    ? activeVariation.disponible !== false && currentStock > 0
+    : (product?.stock ?? 1) > 0;
+
+  // Dynamic packs calculation
+  const currentPacks = useMemo(() => {
+    if (activeVariation?.packs && activeVariation.packs.length > 0) {
+      return activeVariation.packs;
+    }
+    if (!product?.packs || product.packs.length === 0) {
+      return [
+        { cantidad: 25, precio: currentBasePrice * 25, descuento: 0 },
+        { cantidad: 50, precio: Math.round(currentBasePrice * 50 * 0.95 * 100) / 100, descuento: 5 },
+        { cantidad: 100, precio: Math.round(currentBasePrice * 100 * 0.9 * 100) / 100, descuento: 10 },
+      ];
+    }
+    if (activeVariation && activeVariation.precio !== product.precio && product.precio > 0) {
+      return product.packs.map((p: any) => {
+        const discountMult = 1 - (p.descuento || 0) / 100;
+        const calcPrice = activeVariation.precio * p.cantidad * discountMult;
+        return {
+          ...p,
+          precio: Math.round(calcPrice * 100) / 100,
+        };
+      });
+    }
+    return product.packs;
+  }, [activeVariation, product, currentBasePrice]);
+
+  // Gallery images combined with active variation image
+  const galleryImages = useMemo(() => {
+    if (!product) return [];
+    const base = [...(product.imagenes || [])];
+    if (activeVariation?.imagen && !base.includes(activeVariation.imagen)) {
+      return [activeVariation.imagen, ...base];
+    }
+    return base;
+  }, [product, activeVariation]);
+
+  useEffect(() => {
+    if (activeVariation?.imagen) {
+      const idx = galleryImages.indexOf(activeVariation.imagen);
+      if (idx >= 0) setCurrentImageIndex(idx);
+    }
+  }, [activeVariation, galleryImages]);
 
   // ── Deep linking: read pack + medida from URL on mount once ──
   const initializedFromUrl = useRef(false);
@@ -135,36 +241,44 @@ export default function ProductoDetalleClient({
     const packParam = searchParams.get('pack');
     const medidaParam = searchParams.get('medida');
     if (packParam) {
-      const idx = product.packs.findIndex((p) => String(p.cantidad) === packParam);
+      const idx = currentPacks.findIndex((p: any) => String(p.cantidad) === packParam);
       if (idx >= 0) setSelectedPackIndex(idx);
     }
     if (medidaParam) {
       const decoded = decodeURIComponent(medidaParam);
-      if (product.medidas.includes(decoded)) {
+      if (product.medidas?.includes(decoded)) {
         setSelectedMedida(decoded);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product]);
+  }, [product, currentPacks]);
 
   const selectedPack =
-    product?.packs?.[selectedPackIndex] ??
-    product?.packs?.[0] ??
-    { cantidad: 25, precio: product?.precio || 0, descuento: 0 };
+    currentPacks?.[selectedPackIndex] ??
+    currentPacks?.[0] ??
+    { cantidad: 25, precio: currentBasePrice * 25, descuento: 0 };
 
   const handleAddToCart = useCallback(() => {
     if (!product || !selectedPack) return;
+    const variantSummary = activeVariation
+      ? activeVariation.titulo || activeVariation.atributos?.map((a: any) => `${a.nombre}: ${a.valor}`).join(', ')
+      : selectedMedida || (product.medidas || [])[0];
+
     addItem(
-      product,
+      {
+        ...product,
+        precio: currentBasePrice,
+        sku: currentSku,
+      },
       1,
-      selectedMedida || (product.medidas || [])[0],
+      variantSummary,
       selectedColor || (product.colores || [])[0],
       selectedPack.cantidad,
       true
     );
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
-  }, [product, selectedPack, selectedMedida, selectedColor, addItem]);
+  }, [product, selectedPack, activeVariation, currentBasePrice, currentSku, selectedMedida, selectedColor, addItem]);
 
   const handleToggleFavorite = useCallback(() => {
     if (!product || !selectedPack) return;
@@ -175,51 +289,60 @@ export default function ProductoDetalleClient({
 
   const handleWhatsApp = useCallback(() => {
     if (!product || !selectedPack) return;
-    const medida = selectedMedida || (product.medidas || [])[0];
-    const color = selectedColor || (product.colores || [])[0];
-    const productSeoPath = product.seoPath && product.seoPath !== 'productos' ? `${product.seoPath}` : `productos`;
-    const productUrl = `https://gudstor-pack.vercel.app/${productSeoPath}/${product.slug || product.id}`;
+    const productUrl = `https://gudstor-pack.vercel.app/productos/${product.slug || product.id}`;
+    const variantDetails = activeVariation
+      ? activeVariation.atributos?.map((a: any) => `📌 ${a.nombre}: ${a.valor}`).join('\n')
+      : [
+          selectedMedida ? `📐 Medida: ${selectedMedida}` : null,
+          selectedColor ? `🎨 Color: ${selectedColor}` : null,
+        ].filter(Boolean).join('\n');
+
     const msg = [
       'Hola GUDSTOR PACK',
       '',
       'Deseo cotizar el siguiente producto:',
       '',
       `📦 ${product.nombre}`,
-      `📐 Medida: ${medida}`,
-      `🎨 Color: ${color}`,
+      currentSku ? `🏷️ SKU: ${currentSku}` : null,
+      variantDetails,
       `📦 Pack: ${selectedPack.cantidad} ${selectedPack.unidad || product.unidadMedida || 'unidades'}`,
-      `💰 Precio: ${formatPrice(selectedPack.precio)}`,
+      `💰 Precio Unitario: ${formatPrice(selectedPack.precio / selectedPack.cantidad)}/u`,
+      `💵 Precio Pack: ${formatPrice(selectedPack.precio)}`,
       `🔢 Cantidad: ${quantity} pack${quantity > 1 ? 's' : ''}`,
       `💵 Total: ${formatPrice(selectedPack.precio * quantity)}`,
       '',
       `🔗 Ver producto: ${productUrl}`,
       '',
       'Gracias.',
-    ].join('\n');
+    ].filter(Boolean).join('\n');
     window.open(`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
-  }, [product, selectedPack, selectedMedida, selectedColor, quantity]);
+  }, [product, selectedPack, activeVariation, currentSku, selectedMedida, selectedColor, quantity]);
 
   const handleWhatsAppCotizacion = useCallback(() => {
     if (!product || !selectedPack) return;
-    const medida = selectedMedida || (product.medidas || [])[0];
-    const color = selectedColor || (product.colores || [])[0];
-    const productSeoPath = product.seoPath && product.seoPath !== 'productos' ? `${product.seoPath}` : `productos`;
-    const productUrl = `https://gudstor-pack.vercel.app/${productSeoPath}/${product.slug || product.id}`;
+    const productUrl = `https://gudstor-pack.vercel.app/productos/${product.slug || product.id}`;
+    const variantDetails = activeVariation
+      ? activeVariation.atributos?.map((a: any) => `📌 ${a.nombre}: ${a.valor}`).join('\n')
+      : [
+          selectedMedida ? `📐 Medida: ${selectedMedida}` : null,
+          selectedColor ? `🎨 Color: ${selectedColor}` : null,
+        ].filter(Boolean).join('\n');
+
     const msg = [
       'Hola GUDSTOR PACK',
       '',
       `Requiero cotizar este producto por mayor / volumen o con requerimientos personalizados:`,
       '',
       `📦 ${product.nombre}`,
-      `📐 Medida: ${medida}`,
-      `🎨 Color: ${color}`,
+      currentSku ? `🏷️ SKU: ${currentSku}` : null,
+      variantDetails,
       '',
       `🔗 Ver producto: ${productUrl}`,
       '',
       'Gracias.',
-    ].join('\n');
+    ].filter(Boolean).join('\n');
     window.open(`https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
-  }, [product, selectedPack, selectedMedida, selectedColor]);
+  }, [product, selectedPack, activeVariation, currentSku, selectedMedida, selectedColor]);
 
   if (!product) {
     return (
@@ -350,6 +473,14 @@ export default function ProductoDetalleClient({
             <Link href={getCleanCategoryPath(product.categoria)} className="hover:text-primary transition-colors shrink-0">
               {product.categoria}
             </Link>
+            {product.subcategoria && (
+              <>
+                <ChevronRight className="w-3 h-3 shrink-0" />
+                <Link href={getCleanCategoryPath(product.categoria, product.subcategoria)} className="hover:text-primary transition-colors shrink-0">
+                  {product.subcategoria}
+                </Link>
+              </>
+            )}
             <ChevronRight className="w-3 h-3 shrink-0" />
             <span className="text-foreground font-medium truncate">{product.nombre}</span>
           </nav>
@@ -432,63 +563,98 @@ export default function ProductoDetalleClient({
             transition={{ duration: 0.3 }}
             className="lg:sticky lg:top-[96px] lg:self-start"
           >
-            <button
-              onClick={() => setIsLightboxOpen(true)}
-              className="relative w-full min-h-[400px] xl:min-h-[480px] bg-gradient-to-br from-primary/5 via-muted to-secondary/5 rounded-2xl border border-border/50 overflow-hidden cursor-zoom-in group"
-            >
+            <div className="relative w-full aspect-square bg-gradient-to-br from-primary/5 via-muted to-secondary/5 rounded-2xl border border-border/50 overflow-hidden group">
+              {/* Prev / Next Buttons */}
+              {galleryImages.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
+                    }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 bg-white/80 hover:bg-white text-foreground rounded-full flex items-center justify-center shadow-md backdrop-blur-sm transition-all active:scale-95"
+                    aria-label="Imagen anterior"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 bg-white/80 hover:bg-white text-foreground rounded-full flex items-center justify-center shadow-md backdrop-blur-sm transition-all active:scale-95"
+                    aria-label="Siguiente imagen"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+
               {/* Image counter */}
-              {(() => {
-                console.log("RENDER PRODUCT IMAGENES:", product.imagenes, typeof product.imagenes);
-                return null;
-              })()}
-              <div className="absolute top-3 right-3 z-10 px-2.5 py-1 bg-black/30 backdrop-blur-sm text-white text-[11px] font-medium rounded-lg">
-                {currentImageIndex + 1}/{product.imagenes?.length ?? 0}
+              <div className="absolute top-3 right-3 z-10 px-2.5 py-1 bg-black/40 backdrop-blur-sm text-white text-[11px] font-medium rounded-lg">
+                {currentImageIndex + 1}/{galleryImages.length || 1}
               </div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                {product.imagenes && product.imagenes.length > 0 ? (
-                  <div className="w-full h-full relative">
-                    <Image
-                      src={product.imagenes[currentImageIndex]}
-                      alt={product.nombre}
-                      fill
-                      priority
-                      className="object-contain p-4 xl:p-8"
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                    />
-                  </div>
+
+              {/* Main Image */}
+              <div
+                onClick={() => setIsLightboxOpen(true)}
+                className="w-full h-full cursor-zoom-in flex items-center justify-center relative"
+              >
+                {galleryImages.length > 0 ? (
+                  <Image
+                    src={galleryImages[currentImageIndex]}
+                    alt={product.imagenesDetalle?.[currentImageIndex]?.alt || product.nombre}
+                    fill
+                    priority
+                    className="object-contain p-4 xl:p-8"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
                 ) : (
                   <div className="w-28 h-28 bg-gradient-to-br from-primary/15 to-secondary/15 rounded-3xl flex items-center justify-center">
                     <Package className="w-14 h-14 text-primary/50" />
                   </div>
                 )}
               </div>
-              <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-3 py-1.5 bg-black/20 backdrop-blur-sm text-white text-xs rounded-lg">
+
+              {/* Tap to expand button */}
+              <button
+                type="button"
+                onClick={() => setIsLightboxOpen(true)}
+                className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white text-xs rounded-lg transition-colors"
+              >
                 <ZoomIn className="w-3.5 h-3.5" />
                 Toca para ampliar
-              </div>
-            </button>
-            {/* Thumbnail strip — BELOW main image, horizontal row */}
-            {(product.imagenes?.length || 0) > 1 && (
-              <div className="hidden lg:grid grid-cols-4 gap-2 mt-2">
-                {(product.imagenes || []).map((imgUrl, index) => (
+              </button>
+            </div>
+
+            {/* Thumbnail strip — BELOW main image, horizontal grid */}
+            {galleryImages.length > 1 && (
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-3">
+                {galleryImages.map((imgUrl, index) => {
+                  const altText = product.imagenesDetalle?.[index]?.alt || `${product.nombre} - vista ${index + 1}`;
+                  return (
                     <button
                       key={index}
+                      type="button"
                       onClick={() => { setCurrentImageIndex(index); setIsZoomed(false); }}
-                      className={`relative aspect-square bg-gradient-to-br from-muted to-muted/50 rounded-xl border-2 flex items-center justify-center overflow-hidden transition-all hover:opacity-80 ${
+                      className={`relative aspect-square bg-gradient-to-br from-muted to-muted/50 rounded-xl border-2 flex items-center justify-center overflow-hidden transition-all hover:opacity-90 ${
                         currentImageIndex === index
-                          ? 'border-primary shadow-sm'
-                          : 'border-border/50'
+                          ? 'border-primary ring-2 ring-primary/20 shadow-sm'
+                          : 'border-border/50 opacity-70 hover:opacity-100'
                       }`}
                     >
                       <Image
                         src={imgUrl}
-                        alt={`${product.nombre} - vista ${index + 1}`}
+                        alt={altText}
                         fill
                         className="object-cover"
                         sizes="100px"
                       />
                     </button>
-                  ))}
+                  );
+                })}
               </div>
             )}
           </motion.div>
@@ -524,11 +690,11 @@ export default function ProductoDetalleClient({
             {/* Description — Collapsible */}
             <div className="bg-muted/30 rounded-xl p-4">
               <div className={`overflow-hidden transition-all duration-300 ease-in-out ${descExpanded ? 'max-h-[2000px]' : 'max-h-[72px]'}`}>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {product.descripcion}
+                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                  {product.descripcionCorta || product.descripcion}
                 </p>
               </div>
-              {product.descripcion.length > 120 && (
+              {(product.descripcionCorta || product.descripcion).length > 120 && (
                 <button
                   onClick={() => setDescExpanded(!descExpanded)}
                   className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-green-600 hover:text-green-700 active:text-green-800 transition-colors"
@@ -541,21 +707,26 @@ export default function ProductoDetalleClient({
 
             <SavingsMessage
               selectedPack={selectedPack}
-              basePrice={product.precio}
-              allPacks={product.packs}
+              basePrice={currentBasePrice}
+              allPacks={currentPacks}
               unit={selectedPack.unidad || product.unidadMedida || 'unidades'}
             />
 
             {/* Pack Selector */}
             <div>
-              <h3 className="text-sm font-semibold text-foreground mb-2">Elige tu Pack</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-foreground">Elige tu Pack</h3>
+                <span className="text-xs text-primary font-bold">
+                  Unitario: {formatPrice(selectedPack.precio / selectedPack.cantidad)}/u
+                </span>
+              </div>
               <div className="grid grid-cols-3 gap-3">
-                {(product.packs || []).map((pack, i) => {
-                  const originalPrice = product.precio * pack.cantidad;
+                {currentPacks.map((pack: any, i: number) => {
+                  const originalPrice = currentBasePrice * pack.cantidad;
                   const isSelected = selectedPackIndex === i;
                   return (
                     <motion.button
-                      key={pack.cantidad}
+                      key={`${pack.cantidad}-${i}`}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => setSelectedPackIndex(i)}
                       className={`relative p-3 rounded-xl border-2 transition-all text-center ${
@@ -586,37 +757,91 @@ export default function ProductoDetalleClient({
               </div>
             </div>
 
-            {/* Color & Size */}
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-foreground mb-2">Color</h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {(product.colores || []).map((color) => (
-                    <button key={color} onClick={() => setSelectedColor(color)}
-                      className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all min-h-[36px] ${
-                        selectedColor === color || (!selectedColor && (product.colores || [])[0] === color)
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-foreground/70'
-                      }`}
-                    >{color}</button>
-                  ))}
+            {/* Variaciones de Producto (si están habilitadas en CMS) */}
+            {product.tieneVariaciones && product.atributos && product.atributos.length > 0 ? (
+              <div className="space-y-3 p-4 bg-muted/30 border border-border/60 rounded-2xl">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground">Variaciones y Opciones</span>
+                  {currentSku && <span className="text-[11px] font-mono text-muted-foreground">SKU: {currentSku}</span>}
+                </div>
+                {product.atributos.map((attr: any) => (
+                  <div key={attr.nombre}>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-xs font-semibold text-foreground">{attr.nombre}:</span>
+                      <span className="text-xs font-bold text-primary">{selectedAttributes[attr.nombre]}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {(attr.valores || []).map((val: string) => {
+                        const isSelected = selectedAttributes[attr.nombre] === val;
+                        return (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => setSelectedAttributes((prev) => ({ ...prev, [attr.nombre]: val }))}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all ${
+                              isSelected
+                                ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                                : 'border-border/70 bg-card hover:bg-muted text-foreground'
+                            }`}
+                          >
+                            {val}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <div className="pt-1 flex items-center justify-between text-xs border-t border-border/40">
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-block w-2 h-2 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                    <span className={isAvailable ? 'text-emerald-700 font-semibold' : 'text-red-600 font-semibold'}>
+                      {isAvailable ? `En stock (${currentStock} disponibles)` : 'Agotado'}
+                    </span>
+                  </div>
+                  {currentOldPrice && (
+                    <span className="text-muted-foreground line-through text-xs font-medium">
+                      Antes: {formatPrice(currentOldPrice)}
+                    </span>
+                  )}
                 </div>
               </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-foreground mb-2">Medida</h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {(product.medidas || []).map((medida) => (
-                    <button key={medida} onClick={() => setSelectedMedida(medida)}
-                      className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all min-h-[36px] ${
-                        selectedMedida === medida || (!selectedMedida && (product.medidas || [])[0] === medida)
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-foreground/70'
-                      }`}
-                    >{medida}</button>
-                  ))}
-                </div>
+            ) : (
+              /* Color & Size (compatibilidad estándar) */
+              <div className="flex gap-4">
+                {(product.colores && product.colores.length > 0) && (
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-foreground mb-2">Color</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {product.colores.map((color: string) => (
+                        <button key={color} onClick={() => setSelectedColor(color)}
+                          className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all min-h-[36px] ${
+                            selectedColor === color || (!selectedColor && product.colores[0] === color)
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border text-foreground/70'
+                          }`}
+                        >{color}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(product.medidas && product.medidas.length > 0) && (
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-foreground mb-2">Medida</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {product.medidas.map((medida: string) => (
+                        <button key={medida} onClick={() => setSelectedMedida(medida)}
+                          className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all min-h-[36px] ${
+                            selectedMedida === medida || (!selectedMedida && product.medidas[0] === medida)
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border text-foreground/70'
+                          }`}
+                        >{medida}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             {/* ── WhatsApp CTA Banner ── */}
             <div className="bg-gradient-to-r from-[#25D366]/8 to-[#25D366]/3 border border-[#25D366]/20 rounded-2xl p-4 space-y-3">
@@ -659,15 +884,21 @@ export default function ProductoDetalleClient({
                 <motion.div key={activeTab} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }} className="py-4">
                   {activeTab === 'descripcion' && (
                     <div>
-                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${descExpanded ? 'max-h-[2000px]' : 'max-h-[60px]'}`}>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          Producto ideal para uso en ecommerce, tiendas por departamento y logística empresarial.
-                          Diseñado para proteger tus mercancías durante el transporte y almacenamiento.
-                          Fabricado con materiales de alta calidad que cumplen con los estándares internacionales de embalaje.
-                        </p>
-                        <p className="text-sm text-muted-foreground leading-relaxed mt-2">
-                          {product.descripcion}
-                        </p>
+                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${descExpanded ? 'max-h-[2000px]' : 'max-h-[140px]'}`}>
+                        <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line space-y-3">
+                          {product.descripcionLarga ? (
+                            <p>{product.descripcionLarga}</p>
+                          ) : (
+                            <>
+                              <p>
+                                Producto ideal para uso en ecommerce, tiendas por departamento y logística empresarial.
+                                Diseñado para proteger tus mercancías durante el transporte y almacenamiento.
+                                Fabricado con materiales de alta calidad que cumplen con los estándares internacionales de embalaje.
+                              </p>
+                              <p>{product.descripcion}</p>
+                            </>
+                          )}
+                        </div>
                       </div>
                       <button
                         onClick={() => setDescExpanded(!descExpanded)}
@@ -679,25 +910,100 @@ export default function ProductoDetalleClient({
                     </div>
                   )}
                   {activeTab === 'especificaciones' && (
-                    <div className="space-y-2">
-                      {[
-                        ['Material', product.material],
-                        ['Categoría', product.categoria],
-                        ['Medidas disponibles', product.medidas.join(', ')],
-                        ['Colores disponibles', product.colores.join(', ')],
-                        ['Packs disponibles', (product.packs || []).map(p => `${p.cantidad} ${p.unidad || product.unidadMedida || 'uds'} (-${p.descuento}%)`).join(', ')],
-                      ].map(([label, value]) => (
-                        <div key={label} className="flex justify-between py-2.5 border-b border-border/30 text-sm">
-                          <span className="text-muted-foreground">{label}</span>
-                          <span className="font-medium text-foreground text-right ml-4">{value}</span>
+                    <div className="space-y-1 divide-y divide-border/30">
+                      {/* Especificaciones dinámicas creadas en Sanity */}
+                      {product.especificaciones && product.especificaciones.length > 0 ? (
+                        product.especificaciones.map((spec: any, idx: number) => (
+                          <div key={idx} className="flex justify-between py-2.5 text-sm">
+                            <span className="text-muted-foreground font-medium">{spec.nombre}</span>
+                            <span className="font-semibold text-foreground text-right ml-4">{spec.valor}</span>
+                          </div>
+                        ))
+                      ) : null}
+
+                      {/* Especificaciones base */}
+                      {product.material && (
+                        <div className="flex justify-between py-2.5 text-sm">
+                          <span className="text-muted-foreground font-medium">Material</span>
+                          <span className="font-semibold text-foreground text-right ml-4">{product.material}</span>
                         </div>
-                      ))}
+                      )}
+                      {product.categoria && (
+                        <div className="flex justify-between py-2.5 text-sm">
+                          <span className="text-muted-foreground font-medium">Categoría</span>
+                          <span className="font-semibold text-foreground text-right ml-4">{product.categoria}</span>
+                        </div>
+                      )}
+                      {product.subcategoria && (
+                        <div className="flex justify-between py-2.5 text-sm">
+                          <span className="text-muted-foreground font-medium">Subcategoría</span>
+                          <span className="font-semibold text-foreground text-right ml-4">{product.subcategoria}</span>
+                        </div>
+                      )}
+                      {currentSku && (
+                        <div className="flex justify-between py-2.5 text-sm">
+                          <span className="text-muted-foreground font-medium">SKU</span>
+                          <span className="font-mono font-semibold text-foreground text-right ml-4">{currentSku}</span>
+                        </div>
+                      )}
+                      {product.medidas && product.medidas.length > 0 && (
+                        <div className="flex justify-between py-2.5 text-sm">
+                          <span className="text-muted-foreground font-medium">Medidas</span>
+                          <span className="font-semibold text-foreground text-right ml-4">{product.medidas.join(', ')}</span>
+                        </div>
+                      )}
+                      {product.colores && product.colores.length > 0 && (
+                        <div className="flex justify-between py-2.5 text-sm">
+                          <span className="text-muted-foreground font-medium">Colores</span>
+                          <span className="font-semibold text-foreground text-right ml-4">{product.colores.join(', ')}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between py-2.5 text-sm">
+                        <span className="text-muted-foreground font-medium">Packs disponibles</span>
+                        <span className="font-semibold text-foreground text-right ml-4">
+                          {currentPacks.map((p: any) => `${p.cantidad} ${p.unidad || product.unidadMedida || 'uds'}`).join(', ')}
+                        </span>
+                      </div>
                     </div>
                   )}
                   {activeTab === 'envios' && (
                     <div className="space-y-5">
+                      {product.envio?.info && (
+                        <div className="p-3.5 bg-primary/5 rounded-xl border border-primary/15 text-sm">
+                          <p className="font-semibold text-primary mb-1">Información de despacho</p>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{product.envio.info}</p>
+                        </div>
+                      )}
+                      {product.envio && (
+                        <div className="space-y-1 divide-y divide-border/30 text-sm">
+                          {product.envio.zonas && (
+                            <div className="flex justify-between py-2">
+                              <span className="text-muted-foreground font-medium">Zonas de Cobertura</span>
+                              <span className="font-semibold text-foreground text-right ml-4">{product.envio.zonas}</span>
+                            </div>
+                          )}
+                          {product.envio.tiempos && (
+                            <div className="flex justify-between py-2">
+                              <span className="text-muted-foreground font-medium">Tiempos de Entrega</span>
+                              <span className="font-semibold text-foreground text-right ml-4">{product.envio.tiempos}</span>
+                            </div>
+                          )}
+                          {product.envio.condiciones && (
+                            <div className="flex justify-between py-2">
+                              <span className="text-muted-foreground font-medium">Condiciones</span>
+                              <span className="font-semibold text-foreground text-right ml-4">{product.envio.condiciones}</span>
+                            </div>
+                          )}
+                          {product.envio.costo && (
+                            <div className="flex justify-between py-2">
+                              <span className="text-muted-foreground font-medium">Costo de Envío</span>
+                              <span className="font-semibold text-primary text-right ml-4">{product.envio.costo}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <div>
-                        <h4 className="text-sm font-bold text-foreground mb-3">Envíos a Todo el Perú</h4>
+                        <h4 className="text-sm font-bold text-foreground mb-3">Escala de Envíos por Volumen</h4>
                         <div className="bg-primary/5 rounded-xl border border-primary/10 overflow-hidden">
                           <table className="w-full text-sm">
                             <thead>
@@ -803,100 +1109,98 @@ export default function ProductoDetalleClient({
 
             {/* ── Mobile Image Gallery (ABOVE product info) ── */}
             <div className="space-y-2">
-              {/* Main Image — compact */}
+              {/* Main Image */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
-                className="relative w-full aspect-[4/3] max-h-[260px] bg-gradient-to-br from-primary/5 via-muted to-secondary/5 rounded-2xl border border-border/50 overflow-hidden"
+                className="relative w-full aspect-square max-h-[320px] bg-white rounded-2xl border border-border/50 overflow-hidden shadow-sm flex items-center justify-center"
               >
                 {/* Nav Arrows */}
-                {(product.imagenes?.length || 0) > 1 && (
+                {galleryImages.length > 1 && (
                   <>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setCurrentImageIndex((prev) => (prev - 1 + (product.imagenes?.length || 0)) % (product.imagenes?.length || 0));
+                        setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
                         setIsZoomed(false);
                       }}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/70 backdrop-blur-sm rounded-full shadow-sm active:bg-white/90 transition-colors"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/80 hover:bg-white backdrop-blur-sm rounded-full shadow-md transition-colors"
+                      aria-label="Imagen anterior"
                     >
-                      <ChevronLeft className="w-5 h-5 text-foreground/70" />
+                      <ChevronLeft className="w-5 h-5 text-foreground/80" />
                     </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setCurrentImageIndex((prev) => (prev + 1) % (product.imagenes?.length || 0));
+                        setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length);
                         setIsZoomed(false);
                       }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/70 backdrop-blur-sm rounded-full shadow-sm active:bg-white/90 transition-colors"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/80 hover:bg-white backdrop-blur-sm rounded-full shadow-md transition-colors"
+                      aria-label="Siguiente imagen"
                     >
-                      <ChevronRight className="w-5 h-5 text-foreground/70" />
+                      <ChevronRight className="w-5 h-5 text-foreground/80" />
                     </button>
                   </>
                 )}
 
                 {/* Image counter badge */}
-                <div className="absolute top-2 right-2 z-10 px-2 py-1 bg-black/30 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
-                  {currentImageIndex + 1}/{(product.imagenes?.length || 0)}
+                <div className="absolute top-2 right-2 z-10 px-2 py-1 bg-black/50 backdrop-blur-sm text-white text-[10px] font-medium rounded-md">
+                  {currentImageIndex + 1}/{galleryImages.length}
                 </div>
 
-                {/* Placeholder content */}
+                {/* Main image content */}
                 <div
-                  className="absolute inset-0 flex items-center justify-center cursor-zoom-in"
+                  className="w-full h-full relative cursor-zoom-in flex items-center justify-center p-3"
                   onClick={() => setIsLightboxOpen(true)}
                 >
-                  {product.imagenes && product.imagenes.length > 0 ? (
-                      <div className="w-full h-full relative">
-                        <Image
-                          src={product.imagenes[currentImageIndex]}
-                          alt={product.nombre}
-                          fill
-                          priority
-                          className="object-contain p-4"
-                          sizes="100vw"
-                        />
+                  {galleryImages.length > 0 ? (
+                    <Image
+                      src={galleryImages[currentImageIndex] || galleryImages[0]}
+                      alt={product.imagenesDetalle?.[currentImageIndex]?.alt || product.nombre}
+                      fill
+                      priority
+                      className="object-contain p-2"
+                      sizes="(max-width: 768px) 100vw, 400px"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-16 h-16">
+                      <div className="w-full h-full bg-gradient-to-br from-primary/15 to-secondary/15 rounded-3xl flex items-center justify-center">
+                        <Package className="w-8 h-8 text-primary/50" />
                       </div>
-                    ) : (
-                      <div className={`flex items-center justify-center transition-all duration-300 ${
-                        isZoomed ? 'w-24 h-24' : 'w-16 h-16'
-                      }`}>
-                        <div className="w-full h-full bg-gradient-to-br from-primary/15 to-secondary/15 rounded-3xl flex items-center justify-center">
-                          <Package className="w-8 h-8 text-primary/50" />
-                        </div>
-                      </div>
-                    )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Tap to expand */}
                 <button
                   onClick={() => setIsLightboxOpen(true)}
-                  className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-black/30 backdrop-blur-sm text-white text-[11px] rounded-lg active:bg-black/40 transition-colors"
+                  className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-sm text-white text-[11px] rounded-lg active:bg-black/60 transition-colors"
                 >
                   <ZoomIn className="w-3.5 h-3.5" />
                   Ampliar
                 </button>
               </motion.div>
 
-              {/* Image grid — show all images as a visible grid */}
-              {(product.imagenes?.length || 0) > 1 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {(product.imagenes || []).map((imgUrl, index) => (
+              {/* Image thumbnails strip */}
+              {galleryImages.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  {galleryImages.map((imgUrl, index) => (
                     <button
                       key={index}
                       onClick={() => { setCurrentImageIndex(index); setIsZoomed(false); }}
-                      className={`relative aspect-square rounded-xl border-2 flex items-center justify-center overflow-hidden transition-all ${
+                      className={`relative w-16 h-16 flex-shrink-0 rounded-xl border-2 overflow-hidden transition-all bg-white ${
                         currentImageIndex === index
-                          ? 'border-primary shadow-sm'
-                          : 'border-border/50 bg-muted/30'
+                          ? 'border-primary ring-2 ring-primary/20 shadow-sm'
+                          : 'border-border/60 opacity-70 hover:opacity-100'
                       }`}
                     >
                       <Image
                         src={imgUrl}
-                        alt={`${product.nombre} - vista ${index + 1}`}
+                        alt={product.imagenesDetalle?.[index]?.alt || `${product.nombre} - vista ${index + 1}`}
                         fill
-                        className="object-cover"
-                        sizes="100px"
+                        className="object-contain p-1"
+                        sizes="64px"
                       />
                     </button>
                   ))}
@@ -906,32 +1210,39 @@ export default function ProductoDetalleClient({
 
             <SavingsMessage
               selectedPack={selectedPack}
-              basePrice={product.precio}
-              allPacks={product.packs}
+              basePrice={currentBasePrice}
+              allPacks={currentPacks}
               unit={selectedPack.unidad || product.unidadMedida || 'unidades'}
             />
 
             {/* Pack Selector — compact for mobile */}
             <div>
-              <h3 className="text-xs font-semibold text-foreground mb-2">Elige tu Pack</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-semibold text-foreground">Elige tu Pack</h3>
+                {currentSku && (
+                  <span className="text-[10px] font-mono text-muted-foreground">SKU: {currentSku}</span>
+                )}
+              </div>
               <div className="grid grid-cols-3 gap-1.5">
-                {(product.packs || []).map((pack, i) => {
+                {currentPacks.map((pack: any, i: number) => {
                   const isSelected = selectedPackIndex === i;
+                  const unitPrice = pack.cantidad > 0 ? (pack.precio / pack.cantidad).toFixed(2) : '0';
                   return (
                     <motion.button
                       key={pack.cantidad}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => setSelectedPackIndex(i)}
-                      className={`p-2 rounded-xl border-2 transition-all text-center ${
+                      className={`p-2 rounded-xl border-2 transition-all text-center relative ${
                         isSelected
-                          ? 'border-primary bg-primary/5 shadow-sm'
-                          : 'border-border'
+                          ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                          : 'border-border bg-white hover:border-border/80'
                       }`}
                     >
                       <p className="text-[10px] text-muted-foreground line-through">
-                        {formatPrice(product.precio * pack.cantidad)}
+                        {formatPrice(currentBasePrice * pack.cantidad)}
                       </p>
                       <p className="text-sm font-extrabold text-primary">{formatPrice(pack.precio)}</p>
+                      <p className="text-[9px] text-muted-foreground mt-0.5">S/ {unitPrice} / ud</p>
                       <div className="flex items-center justify-center gap-1 mt-0.5">
                         <span className="text-[9px] text-foreground/70 uppercase font-medium">{pack.cantidad} {pack.unidad || product.unidadMedida || 'UDS'}</span>
                         {pack.descuento > 0 && (
@@ -944,37 +1255,91 @@ export default function ProductoDetalleClient({
               </div>
             </div>
 
-            {/* Color & Medida — stacked on mobile */}
-            <div className="space-y-3">
-              <div>
-                <h3 className="text-xs font-semibold text-foreground mb-1.5">Color</h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {(product.colores || []).map((color) => (
-                    <button key={color} onClick={() => setSelectedColor(color)}
-                      className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all ${
-                        selectedColor === color || (!selectedColor && (product.colores || [])[0] === color)
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-foreground/70'
-                      }`
-                    }>{color}</button>
-                  ))}
+            {/* Variaciones de Producto (Mobile) */}
+            {product.tieneVariaciones && product.atributos && product.atributos.length > 0 ? (
+              <div className="space-y-2.5 p-3 bg-muted/30 border border-border/60 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-foreground">Variaciones</span>
+                  {currentSku && <span className="text-[10px] font-mono text-muted-foreground">SKU: {currentSku}</span>}
+                </div>
+                {product.atributos.map((attr: any) => (
+                  <div key={attr.nombre}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-semibold text-foreground">{attr.nombre}:</span>
+                      <span className="text-xs font-bold text-primary">{selectedAttributes[attr.nombre]}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(attr.valores || []).map((val: string) => {
+                        const isSelected = selectedAttributes[attr.nombre] === val;
+                        return (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => setSelectedAttributes((prev) => ({ ...prev, [attr.nombre]: val }))}
+                            className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all ${
+                              isSelected
+                                ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                                : 'border-border/70 bg-card hover:bg-muted text-foreground'
+                            }`}
+                          >
+                            {val}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <div className="pt-1 flex items-center justify-between text-xs border-t border-border/40">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`inline-block w-2 h-2 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                    <span className={isAvailable ? 'text-emerald-700 font-semibold text-[11px]' : 'text-red-600 font-semibold text-[11px]'}>
+                      {isAvailable ? `En stock (${currentStock} disponibles)` : 'Agotado'}
+                    </span>
+                  </div>
+                  {currentOldPrice && (
+                    <span className="text-muted-foreground line-through text-[11px] font-medium">
+                      Antes: {formatPrice(currentOldPrice)}
+                    </span>
+                  )}
                 </div>
               </div>
-              <div>
-                <h3 className="text-xs font-semibold text-foreground mb-1.5">Medida</h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {(product.medidas || []).map((medida) => (
-                    <button key={medida} onClick={() => setSelectedMedida(medida)}
-                      className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all ${
-                        selectedMedida === medida || (!selectedMedida && (product.medidas || [])[0] === medida)
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-border text-foreground/70'
-                      }`
-                    }>{medida}</button>
-                  ))}
-                </div>
+            ) : (
+              /* Color & Medida — stacked on mobile */
+              <div className="space-y-3">
+                {(product.colores && product.colores.length > 0) && (
+                  <div>
+                    <h3 className="text-xs font-semibold text-foreground mb-1.5">Color</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {product.colores.map((color: string) => (
+                        <button key={color} onClick={() => setSelectedColor(color)}
+                          className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all ${
+                            selectedColor === color || (!selectedColor && product.colores[0] === color)
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border text-foreground/70'
+                          }`
+                        }>{color}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(product.medidas && product.medidas.length > 0) && (
+                  <div>
+                    <h3 className="text-xs font-semibold text-foreground mb-1.5">Medida</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {product.medidas.map((medida: string) => (
+                        <button key={medida} onClick={() => setSelectedMedida(medida)}
+                          className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all ${
+                            selectedMedida === medida || (!selectedMedida && product.medidas[0] === medida)
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border text-foreground/70'
+                          }`
+                        }>{medida}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             {/* ── Mobile WhatsApp CTA Banner ── */}
             <div className="bg-gradient-to-r from-[#25D366]/8 to-[#25D366]/3 border border-[#25D366]/20 rounded-xl p-3 space-y-2.5">
@@ -1017,14 +1382,20 @@ export default function ProductoDetalleClient({
                 <motion.div key={activeTab} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }} className="py-3">
                   {activeTab === 'descripcion' && (
                     <div>
-                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${descExpanded ? 'max-h-[2000px]' : 'max-h-[48px]'}`}>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Producto ideal para uso en ecommerce, tiendas por departamento y logística empresarial.
-                          Diseñado para proteger tus mercancías durante el transporte y almacenamiento.
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed mt-1.5">
-                          {product.descripcion}
-                        </p>
+                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${descExpanded ? 'max-h-[2000px]' : 'max-h-[100px]'}`}>
+                        <div className="text-xs text-foreground/80 leading-relaxed whitespace-pre-line space-y-2">
+                          {product.descripcionLarga ? (
+                            <p>{product.descripcionLarga}</p>
+                          ) : (
+                            <>
+                              <p>
+                                Producto ideal para uso en ecommerce, tiendas por departamento y logística empresarial.
+                                Diseñado para proteger tus mercancías durante el transporte y almacenamiento.
+                              </p>
+                              <p>{product.descripcion}</p>
+                            </>
+                          )}
+                        </div>
                       </div>
                       <button
                         onClick={() => setDescExpanded(!descExpanded)}
@@ -1036,23 +1407,96 @@ export default function ProductoDetalleClient({
                     </div>
                   )}
                   {activeTab === 'especificaciones' && (
-                    <div className="space-y-1.5">
-                      {[
-                        ['Material', product.material],
-                        ['Categoría', product.categoria],
-                        ['Medidas', product.medidas.join(', ')],
-                        ['Colores', product.colores.join(', ')],
-                        ['Packs', (product.packs || []).map(p => `${p.cantidad} ${p.unidad || product.unidadMedida || 'uds'} (-${p.descuento}%)`).join(', ')],
-                      ].map(([label, value]) => (
-                        <div key={label} className="flex justify-between py-2 border-b border-border/30 text-xs">
-                          <span className="text-muted-foreground">{label}</span>
-                          <span className="font-medium text-foreground text-right ml-3 max-w-[60%]">{value}</span>
+                    <div className="space-y-1 divide-y divide-border/30 text-xs">
+                      {product.especificaciones && product.especificaciones.length > 0 ? (
+                        product.especificaciones.map((spec: any, idx: number) => (
+                          <div key={idx} className="flex justify-between py-1.5">
+                            <span className="text-muted-foreground font-medium">{spec.nombre}</span>
+                            <span className="font-semibold text-foreground text-right ml-3 max-w-[60%]">{spec.valor}</span>
+                          </div>
+                        ))
+                      ) : null}
+
+                      {product.material && (
+                        <div className="flex justify-between py-1.5">
+                          <span className="text-muted-foreground font-medium">Material</span>
+                          <span className="font-semibold text-foreground text-right ml-3">{product.material}</span>
                         </div>
-                      ))}
+                      )}
+                      {product.categoria && (
+                        <div className="flex justify-between py-1.5">
+                          <span className="text-muted-foreground font-medium">Categoría</span>
+                          <span className="font-semibold text-foreground text-right ml-3">{product.categoria}</span>
+                        </div>
+                      )}
+                      {product.subcategoria && (
+                        <div className="flex justify-between py-1.5">
+                          <span className="text-muted-foreground font-medium">Subcategoría</span>
+                          <span className="font-semibold text-foreground text-right ml-3">{product.subcategoria}</span>
+                        </div>
+                      )}
+                      {currentSku && (
+                        <div className="flex justify-between py-1.5">
+                          <span className="text-muted-foreground font-medium">SKU</span>
+                          <span className="font-mono font-semibold text-foreground text-right ml-3">{currentSku}</span>
+                        </div>
+                      )}
+                      {product.medidas && product.medidas.length > 0 && (
+                        <div className="flex justify-between py-1.5">
+                          <span className="text-muted-foreground font-medium">Medidas</span>
+                          <span className="font-semibold text-foreground text-right ml-3">{product.medidas.join(', ')}</span>
+                        </div>
+                      )}
+                      {product.colores && product.colores.length > 0 && (
+                        <div className="flex justify-between py-1.5">
+                          <span className="text-muted-foreground font-medium">Colores</span>
+                          <span className="font-semibold text-foreground text-right ml-3">{product.colores.join(', ')}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between py-1.5">
+                        <span className="text-muted-foreground font-medium">Packs disponibles</span>
+                        <span className="font-semibold text-foreground text-right ml-3">
+                          {currentPacks.map((p: any) => `${p.cantidad} ${p.unidad || product.unidadMedida || 'uds'}`).join(', ')}
+                        </span>
+                      </div>
                     </div>
                   )}
                   {activeTab === 'envios' && (
                     <div className="space-y-4">
+                      {product.envio?.info && (
+                        <div className="p-3 bg-primary/5 rounded-xl border border-primary/15 text-xs">
+                          <p className="font-semibold text-primary mb-1">Información de despacho</p>
+                          <p className="text-muted-foreground leading-relaxed">{product.envio.info}</p>
+                        </div>
+                      )}
+                      {product.envio && (
+                        <div className="space-y-1 divide-y divide-border/30 text-xs">
+                          {product.envio.zonas && (
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-muted-foreground font-medium">Zonas de Cobertura</span>
+                              <span className="font-semibold text-foreground text-right ml-3">{product.envio.zonas}</span>
+                            </div>
+                          )}
+                          {product.envio.tiempos && (
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-muted-foreground font-medium">Tiempos de Entrega</span>
+                              <span className="font-semibold text-foreground text-right ml-3">{product.envio.tiempos}</span>
+                            </div>
+                          )}
+                          {product.envio.condiciones && (
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-muted-foreground font-medium">Condiciones</span>
+                              <span className="font-semibold text-foreground text-right ml-3">{product.envio.condiciones}</span>
+                            </div>
+                          )}
+                          {product.envio.costo && (
+                            <div className="flex justify-between py-1.5">
+                              <span className="text-muted-foreground font-medium">Costo de Envío</span>
+                              <span className="font-semibold text-primary text-right ml-3">{product.envio.costo}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <div>
                         <h4 className="text-xs font-bold text-foreground mb-2">Envíos a Todo el Perú</h4>
                         <div className="bg-primary/5 rounded-xl border border-primary/10 overflow-hidden">

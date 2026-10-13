@@ -1,6 +1,6 @@
-﻿import { Suspense } from 'react';
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { fetchProducts } from '@/lib/fetchCMS';
+import { fetchProducts, fetchCategories, fetchSubcategories } from '@/lib/fetchCMS';
 import fallbackProducts from '@/data/products.json';
 import ProductosContent from './productos-client';
 
@@ -9,10 +9,17 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Catálogo de Productos | GUDSTOR PACK',
   description: 'Descubre nuestra amplia gama de cajas de cartón, materiales de embalaje y accesorios para proteger tus envíos.',
+  alternates: {
+    canonical: 'https://gudstorpack.pe/productos',
+  },
 };
 
 export default async function ProductosPage() {
-  const sanityProducts = await fetchProducts();
+  const [sanityProducts, categories, subcategories] = await Promise.all([
+    fetchProducts(),
+    fetchCategories(),
+    fetchSubcategories(),
+  ]);
   const finalProducts = (sanityProducts && sanityProducts.length > 0) ? sanityProducts : fallbackProducts;
   
   return (
@@ -23,7 +30,11 @@ export default async function ProductosPage() {
         </div>
       }
     >
-      <ProductosContent initialProducts={finalProducts as any} />
+      <ProductosContent
+        initialProducts={finalProducts as any}
+        initialCategories={categories || []}
+        initialSubcategories={subcategories || []}
+      />
     </Suspense>
   );
 }

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Package, Star, Eye, Heart } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useFavoritesStore } from '@/lib/favorites-store';
-import { formatPrice, getCleanCategoryPath } from '@/lib/utils';
+import { formatPrice, getCleanCategoryPath, getProductHref } from '@/lib/utils';
 import type { Product } from '@/lib/types';
 
 interface ProductCardProps {
@@ -70,7 +70,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link href={product.seoPath && product.seoPath !== 'productos' ? `/${product.seoPath}/${product.slug}` : `/productos/${product.slug}`}>
+      <Link href={getProductHref(product)}>
         <article
           className="group relative h-full flex flex-col bg-card rounded-2xl md:rounded-3xl border border-border/50 hover:border-primary/20 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 cursor-pointer overflow-hidden"
           onMouseEnter={() => setIsHovered(true)}

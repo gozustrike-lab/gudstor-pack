@@ -22,7 +22,7 @@ import ProductCard from '@/components/product-card';
 import ImmersiveBanner from '@/components/immersive-banner';
 import { useScrollSpy } from '@/lib/use-scroll-spy';
 import { getCleanCategoryPath, getCategoryAndSubcategoryFromPath } from '@/lib/utils';
-import type { Product } from '@/lib/types';
+import type { Product, Category, Subcategory } from '@/lib/types';
 
 // Fallback type reference
 const visibleProducts: Product[] = [];
@@ -352,7 +352,15 @@ function CategorySidebar({
 }
 
 // ── Main Content ───────────────────────────────────────────────────
-export default function ProductosContent({ initialProducts }: { initialProducts: typeof visibleProducts }) {
+export default function ProductosContent({
+  initialProducts,
+  initialCategories = [],
+  initialSubcategories = [],
+}: {
+  initialProducts: typeof visibleProducts;
+  initialCategories?: Category[];
+  initialSubcategories?: Subcategory[];
+}) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -368,6 +376,20 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'comfort' | 'compact' | 'list'>('comfort');
   const isFirstRender = useRef(true);
+
+  const currentCategoryData = useMemo(() => {
+    if (!selectedCategory) return null;
+    return initialCategories.find(
+      (c) => c.nombre.toLowerCase() === selectedCategory.toLowerCase()
+    );
+  }, [initialCategories, selectedCategory]);
+
+  const currentSubcategoryData = useMemo(() => {
+    if (!selectedSubcategory) return null;
+    return initialSubcategories.find(
+      (s) => s.nombre.toLowerCase() === selectedSubcategory.toLowerCase()
+    );
+  }, [initialSubcategories, selectedSubcategory]);
 
   useScrollSpy({
     ids: ['catalogo', 'productos-listado', 'sidebar-filtros'],
@@ -523,9 +545,18 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
     <div className="min-h-screen bg-background">
       {/* ── Immersive Hero Banner ─────────────────────────────── */}
       <ImmersiveBanner
-        title={selectedSubcategory || (selectedCategory ? selectedCategory : 'Catálogo de Productos')}
-        subtitle={`${filteredProducts.length} ${filteredProducts.length === 1 ? 'producto' : 'productos'} disponibles`}
-        breadcrumb={breadcrumbs.map(b => ({ label: b.label, href: b.action ? '#' : undefined }))}
+        title={
+          currentSubcategoryData?.h1 ||
+          currentCategoryData?.h1 ||
+          selectedSubcategory ||
+          (selectedCategory ? selectedCategory : 'Catálogo de Productos')
+        }
+        subtitle={
+          currentSubcategoryData?.descripcionIntro ||
+          currentCategoryData?.descripcionIntro ||
+          `${filteredProducts.length} ${filteredProducts.length === 1 ? 'producto' : 'productos'} disponibles`
+        }
+        breadcrumb={breadcrumbs.map((b) => ({ label: b.label, href: b.action ? '#' : undefined }))}
       />
 
       {/* ── Main Layout: Sidebar + Products ─────────────────────── */}
@@ -707,6 +738,18 @@ export default function ProductosContent({ initialProducts }: { initialProducts:
                   Ver todos los productos
                 </button>
               </motion.div>
+            )}
+
+            {/* Category / Subcategory SEO Description Block */}
+            {(currentSubcategoryData?.descripcionSeo || currentCategoryData?.descripcionSeo) && (
+              <div className="mt-12 p-6 sm:p-8 bg-card border border-border/60 rounded-2xl shadow-sm text-foreground/80 leading-relaxed text-sm space-y-3">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">
+                  {currentSubcategoryData?.nombre || currentCategoryData?.nombre} en Lima y Todo el Perú
+                </h2>
+                <div className="whitespace-pre-line text-muted-foreground leading-relaxed">
+                  {currentSubcategoryData?.descripcionSeo || currentCategoryData?.descripcionSeo}
+                </div>
+              </div>
             )}
           </div>
         </div>

@@ -10,6 +10,8 @@ import partner from './schemas/partner';
 import siteSettings from './schemas/siteSettings';
 import homeSection from './schemas/homeSection';
 import product from './schemas/product';
+import category from './schemas/category';
+import subcategory from './schemas/subcategory';
 
 export const schemaTypes = [
   heroSlide,
@@ -23,4 +25,6 @@ export const schemaTypes = [
   siteSettings,
   homeSection,
   product,
+  category,
+  subcategory,
 ];

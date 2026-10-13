@@ -106,8 +106,15 @@ export async function fetchSiteSettings(): Promise<SiteSettings | null> {
   return safeFetch<SiteSettings>(preview ? siteSettingsPreviewQuery : siteSettingsQuery, preview);
 }
 
-import type { Product } from './types';
-import { allProductsQuery, allProductsPreviewQuery } from './sanity.queries';
+import type { Product, Category, Subcategory, ProductImageItem } from './types';
+import {
+  allProductsQuery,
+  allProductsPreviewQuery,
+  allCategoriesQuery,
+  allCategoriesPreviewQuery,
+  allSubcategoriesQuery,
+  allSubcategoriesPreviewQuery,
+} from './sanity.queries';
 
 /** Convert any Sanity image representation (URL, asset _ref, or image object) to a CDN URL */
 function toCdnUrl(item: any): string | null {
@@ -125,7 +132,7 @@ function toCdnUrl(item: any): string | null {
     }
   }
   if (typeof item === 'object') {
-    if (typeof item.url === 'string') return item.url;
+    if (typeof item.url === 'string') return toCdnUrl(item.url);
     if (item.asset) {
       if (typeof item.asset === 'string') return toCdnUrl(item.asset);
       if (item.asset.url) return item.asset.url;
@@ -137,12 +144,57 @@ function toCdnUrl(item: any): string | null {
 
 export async function fetchProducts(): Promise<Product[] | null> {
   const preview = isPreview();
-  const res = await safeFetch<Product[]>(preview ? allProductsPreviewQuery : allProductsQuery, preview);
+  const res = await safeFetch<any[]>(preview ? allProductsPreviewQuery : allProductsQuery, preview);
   if (!res) return null;
-  return res.map((product) => ({
-    ...product,
-    imagenes: (product.imagenes || [])
-      .map((img: any) => toCdnUrl(img))
-      .filter((url): url is string => Boolean(url && (url.startsWith('http://') || url.startsWith('https://')))),
-  }));
+  return res.map((product) => {
+    const rawImages = Array.isArray(product.imagenes) ? product.imagenes : [];
+    const imagenesDetalle: ProductImageItem[] = [];
+    const imagenesUrls: string[] = [];
+
+    for (const item of rawImages) {
+      const url = toCdnUrl(item?.url || item);
+      if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+        imagenesUrls.push(url);
+        imagenesDetalle.push({
+          url,
+          alt: item?.alt || product.nombre,
+        });
+      }
+    }
+
+    const variaciones = Array.isArray(product.variaciones)
+      ? product.variaciones.map((v: any) => ({
+          ...v,
+          imagen: toCdnUrl(v.imagen) || undefined,
+        }))
+      : undefined;
+
+    return {
+      ...product,
+      imagenes: imagenesUrls,
+      imagenesDetalle,
+      variaciones,
+    } as Product;
+  });
+}
+
+export async function fetchCategories(): Promise<Category[] | null> {
+  const preview = isPreview();
+  const res = await safeFetch<any[]>(preview ? allCategoriesPreviewQuery : allCategoriesQuery, preview);
+  if (!res) return null;
+  return res.map((cat) => ({
+    ...cat,
+    heroImage: toCdnUrl(cat.heroImage) || undefined,
+    ogImage: toCdnUrl(cat.ogImage) || undefined,
+  })) as Category[];
+}
+
+export async function fetchSubcategories(): Promise<Subcategory[] | null> {
+  const preview = isPreview();
+  const res = await safeFetch<any[]>(preview ? allSubcategoriesPreviewQuery : allSubcategoriesQuery, preview);
+  if (!res) return null;
+  return res.map((sub) => ({
+    ...sub,
+    heroImage: toCdnUrl(sub.heroImage) || undefined,
+  })) as Subcategory[];
 }

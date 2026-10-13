@@ -83,11 +83,8 @@ export function getCleanCategoryPath(category?: string, subcategory?: string): s
   return '/productos';
 }
 
-export function getProductHref(product: { seoPath?: string; slug?: string; id?: string }): string {
+export function getProductHref(product: { slug?: string; id?: string }): string {
   const slug = product.slug || product.id || '';
-  if (product.seoPath && product.seoPath !== 'productos') {
-    return `/${product.seoPath}/${slug}`;
-  }
   return `/productos/${slug}`;
 }
 
