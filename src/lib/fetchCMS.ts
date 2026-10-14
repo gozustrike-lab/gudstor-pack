@@ -116,11 +116,13 @@ import {
   allSubcategoriesPreviewQuery,
 } from './sanity.queries';
 
+import fallbackProducts from '@/data/products.json';
+
 /** Convert any Sanity image representation (URL, asset _ref, or image object) to a CDN URL */
 function toCdnUrl(item: any): string | null {
   if (!item) return null;
   if (typeof item === 'string') {
-    if (item.startsWith('http://') || item.startsWith('https://')) return item;
+    if (item.startsWith('http://') || item.startsWith('https://') || item.startsWith('/')) return item;
     if (item.startsWith('image-')) {
       const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production';
       const pid = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '981jghg0';
@@ -153,12 +155,30 @@ export async function fetchProducts(): Promise<Product[] | null> {
 
     for (const item of rawImages) {
       const url = toCdnUrl(item?.url || item);
-      if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+      if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) {
         imagenesUrls.push(url);
         imagenesDetalle.push({
           url,
           alt: item?.alt || product.nombre,
         });
+      }
+    }
+
+    // Fallback: If product in Sanity has no images yet, inherit images from fallbackProducts if available
+    if (imagenesUrls.length === 0) {
+      const fb = (fallbackProducts as any[]).find(
+        (p: any) => p.slug === product.slug || p.id === product._id || p.id === product.id
+      );
+      if (fb && Array.isArray(fb.imagenes) && fb.imagenes.length > 0) {
+        for (const imgPath of fb.imagenes) {
+          if (typeof imgPath === 'string') {
+            imagenesUrls.push(imgPath);
+            imagenesDetalle.push({
+              url: imgPath,
+              alt: product.nombre,
+            });
+          }
+        }
       }
     }
 

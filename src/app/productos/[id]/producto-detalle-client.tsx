@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, use, useCallback, useEffect, useRef } from 'react';
+import { useState, use, useCallback, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -141,7 +141,7 @@ export default function ProductoDetalleClient({
   const product = rawProduct
     ? {
         ...rawProduct,
-        imagenes: (rawProduct.imagenes || []).filter((img: any) => typeof img === 'string' && img.startsWith('http')),
+        imagenes: (rawProduct.imagenes || []).filter((img: any) => typeof img === 'string' && (img.startsWith('http') || img.startsWith('/'))),
       }
     : undefined;
 
@@ -203,7 +203,7 @@ export default function ProductoDetalleClient({
         { cantidad: 100, precio: Math.round(currentBasePrice * 100 * 0.9 * 100) / 100, descuento: 10 },
       ];
     }
-    if (activeVariation && activeVariation.precio !== product.precio && product.precio > 0) {
+    if (activeVariation && activeVariation.precio !== product?.precio && (product?.precio || 0) > 0) {
       return product.packs.map((p: any) => {
         const discountMult = 1 - (p.descuento || 0) / 100;
         const calcPrice = activeVariation.precio * p.cantidad * discountMult;
@@ -246,7 +246,7 @@ export default function ProductoDetalleClient({
     }
     if (medidaParam) {
       const decoded = decodeURIComponent(medidaParam);
-      if (product.medidas?.includes(decoded)) {
+      if (product?.medidas?.includes(decoded)) {
         setSelectedMedida(decoded);
       }
     }

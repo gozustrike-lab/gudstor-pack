@@ -18,10 +18,11 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
   const [isZoomed, setIsZoomed] = useState(false);
   const [dragX, setDragX] = useState(0);
 
-  const safeImagenes = (product.imagenes || []).filter((img) => typeof img === 'string' && img.startsWith('https://'));
+  const safeImagenes = (product.imagenes || []).filter((img) => typeof img === 'string' && (img.startsWith('http') || img.startsWith('/')));
   const totalImages = safeImagenes.length;
 
   const goToNext = useCallback(() => {
+    if (totalImages === 0) return;
     setDirection(1);
     setCurrentIndex((prev) => (prev + 1) % totalImages);
     setDragX(0);
@@ -29,6 +30,7 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
   }, [totalImages]);
 
   const goToPrev = useCallback(() => {
+    if (totalImages === 0) return;
     setDirection(-1);
     setCurrentIndex((prev) => (prev - 1 + totalImages) % totalImages);
     setDragX(0);

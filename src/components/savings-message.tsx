@@ -44,7 +44,7 @@ export default function SavingsMessage({ selectedPack, basePrice, allPacks, unit
   const savingsFormatted = savings.toFixed(2);
 
   // Find next better pack for upsell hint
-  const nextBetterPack = allPacks.find(
+  const nextBetterPack = (allPacks || []).find(
     (p) => p.descuento > selectedPack.descuento
   );
 
