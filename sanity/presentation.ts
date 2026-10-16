@@ -67,7 +67,7 @@ export const locations = defineLocations({
     title: 'product.nombre',
     slug: 'product.slug.current',
   },
-  resolve: { type: 'product', href: ({ slug }: any) => `/productos/${slug}` } },
+  resolve: { type: 'product', href: ({ slug }: any) => `/productos/${slug}` },
 }, {
   select: {
     title: 'siteSettings.companyName',

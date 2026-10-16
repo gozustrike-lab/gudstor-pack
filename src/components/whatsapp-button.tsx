@@ -47,11 +47,26 @@ export default function WhatsAppButton() {
     message += '*Detalles del pedido:*\n\n';
 
     items.forEach((item, index) => {
+      const packObj = item.product.packs?.find((p: any) => p.cantidad === item.packSize);
+      const unit = packObj?.unidad || item.product.unidadMedida || 'unidades';
+
       message += `${index + 1}. *${item.product.nombre}*\n`;
-      if (item.medida) message += `   📐 Medida: ${item.medida}\n`;
-      if (item.color) message += `   🎨 Color: ${item.color}\n`;
-      message += `   📦 Cantidad: ${item.quantity}\n`;
-      message += `   💰 Subtotal: ${formatPrice(item.product.precio * item.quantity)}\n\n`;
+      if (item.packSize) {
+        message += `   📦 Pack: ${item.packSize} ${unit}\n`;
+      }
+      if (item.medida) {
+        if (item.medida.includes(':')) {
+          message += `   ⚙️ Opción: ${item.medida}\n`;
+        } else {
+          message += `   📐 Medida: ${item.medida}\n`;
+        }
+      }
+      if (item.color && !item.medida?.toLowerCase().includes(item.color.toLowerCase())) {
+        message += `   🎨 Color: ${item.color}\n`;
+      }
+      message += `   🔢 Cantidad: ${item.quantity} pack${item.quantity > 1 ? 's' : ''}\n`;
+      const packPrice = packObj ? packObj.precio : (item.product.precio * (item.packSize || 1));
+      message += `   💰 Subtotal: ${formatPrice(packPrice * item.quantity)}\n\n`;
     });
 
     message += '━━━━━━━━━━━━━━━━━━\n';
@@ -80,9 +95,17 @@ export default function WhatsAppButton() {
     }, 800);
   };
 
-  // Hide on product detail pages (they have their own sticky bar) and when cart drawer is open
-  const isProductDetail = /^\/productos\/[^/]+$/.test(pathname);
-  if (items.length === 0 || isProductDetail || isCartOpen) return null;
+  // Disappear automatically whenever user opens the cart drawer or preview, or is on the checkout page
+  if (isCartOpen || pathname === '/carrito') return null;
+
+  const handleClick = () => {
+    if (items.length > 0) {
+      setIsFormOpen(true);
+    } else {
+      const directUrl = `https://wa.me/${COMPANY.whatsapp}?text=${encodeURIComponent('Hola GUDSTOR PACK, deseo realizar una consulta sobre sus productos.')}`;
+      window.open(directUrl, '_blank');
+    }
+  };
 
   return (
     <>
@@ -93,15 +116,28 @@ export default function WhatsAppButton() {
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsFormOpen(true)}
-            className="fixed bottom-[80px] sm:bottom-6 right-4 sm:right-6 z-50 flex items-center gap-2 px-5 py-3.5 bg-[#25D366] hover:bg-[#20BD5A] text-white font-semibold rounded-2xl shadow-2xl shadow-[#25D366]/30 transition-colors"
-            aria-label="Enviar pedido por WhatsApp"
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={handleClick}
+            className="fixed bottom-[88px] md:bottom-6 right-4 sm:right-6 z-40 flex items-center gap-2.5 px-4 py-3 sm:px-5 sm:py-3.5 bg-[#25D366] hover:bg-[#20BD5A] text-white font-bold rounded-full shadow-2xl shadow-[#25D366]/40 transition-all border-2 border-white/40"
+            aria-label="Contactar por WhatsApp"
           >
-            <MessageCircle className="w-5 h-5" />
-            <span className="hidden sm:inline">Pedir por WhatsApp</span>
-            <span className="sm:hidden text-sm">{formatPrice(totalPrice())}</span>
+            <div className="relative flex items-center justify-center">
+              <MessageCircle className="w-6 h-6 fill-white text-[#25D366]" />
+              {items.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                  {items.length}
+                </span>
+              )}
+            </div>
+            {items.length > 0 ? (
+              <>
+                <span className="hidden sm:inline text-sm">Pedir por WhatsApp</span>
+                <span className="sm:hidden text-xs">{formatPrice(totalPrice())}</span>
+              </>
+            ) : (
+              <span className="hidden sm:inline text-sm">¿Dudas? Escríbenos</span>
+            )}
           </motion.button>
         )}
       </AnimatePresence>

@@ -23,7 +23,7 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getCategoryFallbackImage } from '@/lib/utils';
 import { COMPANY } from '@/config/company';
 import { useScrollSpy } from '@/lib/use-scroll-spy';
 import ImmersiveBanner from '@/components/immersive-banner';
@@ -92,14 +92,24 @@ export default function CarritoPage() {
       message += '*Detalles del pedido:*\n\n';
 
       items.forEach((item, index) => {
+        const packObj = item.product.packs?.find((p: any) => p.cantidad === item.packSize);
+        const unit = packObj?.unidad || item.product.unidadMedida || 'unidades';
+
         message += `${index + 1}. *${item.product.nombre}*\n`;
         if (item.packSize) {
-          message += `   📦 Pack: ${item.packSize} unidades\n`;
-          const pack = item.product.packs.find((p) => p.cantidad === item.packSize);
-          if (pack) message += `   💲 Precio pack: ${formatPrice(pack.precio)}\n`;
+          message += `   📦 Pack: ${item.packSize} ${unit}\n`;
+          if (packObj) message += `   💲 Precio pack: ${formatPrice(packObj.precio)}\n`;
         }
-        if (item.medida) message += `   📐 Medida: ${item.medida}\n`;
-        if (item.color) message += `   🎨 Color: ${item.color}\n`;
+        if (item.medida) {
+          if (item.medida.includes(':')) {
+            message += `   ⚙️ Opción: ${item.medida}\n`;
+          } else {
+            message += `   📐 Medida: ${item.medida}\n`;
+          }
+        }
+        if (item.color && !item.medida?.toLowerCase().includes(item.color.toLowerCase())) {
+          message += `   🎨 Color: ${item.color}\n`;
+        }
         message += `   🔢 Cantidad: ${item.quantity} pack${item.quantity > 1 ? 's' : ''}\n`;
         message += `   💰 Subtotal: ${formatPrice(getItemSubtotal(item))}\n\n`;
       });
@@ -199,9 +209,12 @@ export default function CarritoPage() {
             <div id="carrito-items" className="lg:col-span-2 space-y-4">
               <AnimatePresence>
                 {items.map((item) => {
-                  const cdnImage = item.product?.imagenes?.find(
-                    (img) => typeof img === 'string' && img.startsWith('http')
-                  );
+                  const fallbackImg = getCategoryFallbackImage(item.product?.categoria);
+                  const itemImg = item.product?.imagenes?.find(
+                    (img: any) => typeof img === 'string' && (img.startsWith('http') || img.startsWith('/images/'))
+                  ) || fallbackImg;
+                  const packObj = item.product?.packs?.find((p: any) => p.cantidad === item.packSize);
+                  const unit = packObj?.unidad || item.product?.unidadMedida || 'uds';
                   const detailHref = item.product?.seoPath && item.product.seoPath !== 'productos'
                     ? `/${item.product.seoPath}/${item.product.slug || item.product.id}`
                     : `/productos/${item.product?.slug || item.product?.id || ''}`;
@@ -219,17 +232,17 @@ export default function CarritoPage() {
                         {/* Product Image */}
                         <Link href={detailHref} className="shrink-0">
                           <div className="relative w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-muted to-muted/50 rounded-xl overflow-hidden flex items-center justify-center">
-                            {cdnImage ? (
-                              <Image
-                                src={cdnImage}
-                                alt={item.product?.nombre || 'Producto'}
-                                fill
-                                className="object-contain p-2"
-                                sizes="(max-width: 640px) 64px, 96px"
-                              />
-                            ) : (
-                              <Package className="w-6 h-6 sm:w-8 sm:h-8 text-primary/30" />
-                            )}
+                            <Image
+                              src={itemImg}
+                              alt={item.product?.nombre || 'Producto'}
+                              fill
+                              className="object-contain p-2"
+                              sizes="(max-width: 640px) 64px, 96px"
+                              onError={(e) => {
+                                const target = e.currentTarget as HTMLImageElement;
+                                if (target.src !== fallbackImg) target.src = fallbackImg;
+                              }}
+                            />
                           </div>
                         </Link>
 
@@ -243,11 +256,11 @@ export default function CarritoPage() {
                                 </h3>
                               </Link>
                               <div className="flex flex-wrap gap-1.5 mt-1">
-                                  {item.packSize && (
-                                    <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                                      Pack {item.packSize} {item.product?.unidadMedida || 'uds'}
-                                    </span>
-                                  )}
+                                {item.packSize && (
+                                  <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                                    Pack {item.packSize} {unit}
+                                  </span>
+                                )}
                                 {item.medida && (
                                   <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
                                     {item.medida}

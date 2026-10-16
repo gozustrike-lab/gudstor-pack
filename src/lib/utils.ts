@@ -10,6 +10,18 @@ export function formatPrice(price: number): string {
   return `S/ ${price.toFixed(2)}`;
 }
 
+/** Return high quality fallback image by category */
+export function getCategoryFallbackImage(categoryNameOrSlug?: string): string {
+  if (!categoryNameOrSlug) return '/images/hero-product.webp';
+  const norm = categoryNameOrSlug.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (norm.includes('caja')) return '/images/categories/cajas.webp';
+  if (norm.includes('film') || norm.includes('stretch')) return '/images/categories/films.webp';
+  if (norm.includes('cinta')) return '/images/categories/cintas.webp';
+  if (norm.includes('protec') || norm.includes('burbuja') || norm.includes('papel') || norm.includes('viruta') || norm.includes('esquinero') || norm.includes('relleno')) return '/images/categories/proteccion.webp';
+  if (norm.includes('bolsa') || norm.includes('sobre')) return '/images/categories/bolsas.webp';
+  return '/images/hero-product.webp';
+}
+
 import type { CartItem } from '@/lib/cart-store';
 
 interface CustomerData {

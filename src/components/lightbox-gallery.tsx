@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Package } from 'lucide-react';
+import { getCategoryFallbackImage } from '@/lib/utils';
 import type { Product } from '@/lib/types';
 
 interface LightboxGalleryProps {
@@ -18,7 +19,11 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
   const [isZoomed, setIsZoomed] = useState(false);
   const [dragX, setDragX] = useState(0);
 
-  const safeImagenes = (product.imagenes || []).filter((img) => typeof img === 'string' && (img.startsWith('http') || img.startsWith('/')));
+  const fallback = getCategoryFallbackImage(product.categoria);
+  const filtered = (product.imagenes || []).filter(
+    (img) => typeof img === 'string' && (img.startsWith('http') || img.startsWith('/images/categories/') || img === '/images/hero-product.webp')
+  );
+  const safeImagenes = filtered.length > 0 ? filtered : [fallback];
   const totalImages = safeImagenes.length;
 
   const goToNext = useCallback(() => {
@@ -204,6 +209,10 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
                       className={`object-contain transition-all duration-300 ${isZoomed ? 'p-0' : 'p-6 sm:p-12'}`}
                       sizes="100vw"
                       priority
+                      onError={(e) => {
+                        const target = e.currentTarget as HTMLImageElement;
+                        if (target.src !== fallback) target.src = fallback;
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -221,7 +230,7 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
               <button
                 key={index}
                 onClick={() => goToIndex(index)}
-                className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden transition-all duration-200 flex-shrink-0 ${
+                className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden transition-all duration-200 flex-shrink-0 bg-white ${
                   index === currentIndex
                     ? 'ring-2 ring-white scale-105'
                     : 'opacity-60 hover:opacity-90'
@@ -232,8 +241,12 @@ export default function LightboxGallery({ product, isOpen, onClose }: LightboxGa
                   src={imgUrl}
                   alt={`${product.nombre} - miniatura ${index + 1}`}
                   fill
-                  className="object-cover"
+                  className="object-contain p-1"
                   sizes="64px"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    if (target.src !== fallback) target.src = fallback;
+                  }}
                 />
               </button>
             ))}

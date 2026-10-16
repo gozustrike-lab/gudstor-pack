@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Package, Star, Eye, Heart } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useFavoritesStore } from '@/lib/favorites-store';
-import { formatPrice, getCleanCategoryPath, getProductHref } from '@/lib/utils';
+import { formatPrice, getCleanCategoryPath, getProductHref, getCategoryFallbackImage } from '@/lib/utils';
 import type { Product } from '@/lib/types';
 
 interface ProductCardProps {
@@ -20,8 +20,10 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [selectedPackIndex, setSelectedPackIndex] = useState(0);
   const [heartActive, setHeartActive] = useState(false);
 
-  // Only use CDN images (https://cdn.sanity.io). Local paths from JSON fallback are skipped.
-  const cdnImage = product.imagenes?.find(img => typeof img === 'string' && img.startsWith('https://')) ?? null;
+  const fallbackImg = getCategoryFallbackImage(product.categoria);
+  const initialImg = product.imagenes?.find(img => typeof img === 'string' && (img.startsWith('http') || img.startsWith('/images/'))) || fallbackImg;
+  const [currentImg, setCurrentImg] = useState<string>(initialImg);
+  const [imgLoaded, setImgLoaded] = useState<boolean>(false);
 
   const addItem = useCartStore((s) => s.addItem);
   const isFav = useFavoritesStore((s) => s.isFavorite(product.id));
@@ -77,32 +79,35 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           onMouseLeave={() => setIsHovered(false)}
         >
           {/* Image Area */}
-          <div className="relative aspect-square bg-gradient-to-br from-muted via-muted to-muted/50 overflow-hidden">
-            {cdnImage ? (
-              <motion.div
-                animate={isHovered ? { scale: 1.05 } : { scale: 1 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="absolute inset-0"
-              >
-                <Image
-                  src={cdnImage}
-                  alt={product.nombre}
-                  fill
-                  className="object-contain p-3"
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                />
-              </motion.div>
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <motion.div
-                  animate={isHovered ? { scale: 1.05, rotate: 2 } : { scale: 1, rotate: 0 }}
-                  transition={{ duration: 0.4, ease: 'easeOut' }}
-                  className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/15 to-secondary/15 flex items-center justify-center"
-                >
-                  <Package className="w-10 h-10 text-primary/60" />
-                </motion.div>
+          <div className="relative aspect-square bg-gradient-to-br from-muted/50 via-muted/30 to-muted/10 overflow-hidden flex items-center justify-center">
+            {/* Skeleton loading shimmer */}
+            {!imgLoaded && (
+              <div className="absolute inset-0 bg-muted/60 animate-pulse flex items-center justify-center">
+                <Package className="w-10 h-10 text-primary/20 animate-pulse" />
               </div>
             )}
+
+            <motion.div
+              animate={isHovered ? { scale: 1.05 } : { scale: 1 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <Image
+                src={currentImg}
+                alt={product.nombre}
+                fill
+                className={`object-contain p-3 transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                onLoad={() => setImgLoaded(true)}
+                onError={() => {
+                  if (currentImg !== fallbackImg) {
+                    setCurrentImg(fallbackImg);
+                  } else {
+                    setCurrentImg('/images/hero-product.webp');
+                  }
+                }}
+              />
+            </motion.div>
 
             {/* Hover overlay with flip hint */}
             <motion.div
@@ -187,7 +192,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           <div className="p-3 sm:p-4 md:p-5">
             {/* Tags */}
             <div className="flex flex-wrap gap-1.5 mb-3">
-              {product.etiquetas.slice(0, 3).map((etiqueta) => (
+              {(product.etiquetas || []).slice(0, 3).map((etiqueta) => (
                 <span
                   key={etiqueta}
                   className="px-2 py-0.5 text-[10px] font-medium text-primary bg-primary/8 rounded-md"
@@ -204,7 +209,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
             {/* Pack Selector (Pills) */}
             <div className="flex gap-1.5 mb-3">
-              {product.packs.map((pack, i) => (
+              {(product.packs || []).map((pack, i) => (
                 <motion.button
                   key={pack.cantidad}
                   whileTap={{ scale: 0.95 }}
@@ -236,8 +241,8 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
             {/* Material & Measures */}
             <div className="flex items-center gap-3 mb-4 text-xs text-muted-foreground">
-              <span className="bg-muted/50 px-2 py-1 rounded-md">{product.material}</span>
-              <span className="bg-muted/50 px-2 py-1 rounded-md">{product.medidas[0]}</span>
+              {product.material && <span className="bg-muted/50 px-2 py-1 rounded-md">{product.material}</span>}
+              {product.medidas?.[0] && <span className="bg-muted/50 px-2 py-1 rounded-md">{product.medidas[0]}</span>}
             </div>
 
             {/* Price & Cart */}

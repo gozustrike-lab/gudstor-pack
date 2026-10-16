@@ -117,12 +117,17 @@ import {
 } from './sanity.queries';
 
 import fallbackProducts from '@/data/products.json';
+import { getCategoryFallbackImage } from './utils';
+export { getCategoryFallbackImage };
 
 /** Convert any Sanity image representation (URL, asset _ref, or image object) to a CDN URL */
 function toCdnUrl(item: any): string | null {
   if (!item) return null;
   if (typeof item === 'string') {
-    if (item.startsWith('http://') || item.startsWith('https://') || item.startsWith('/')) return item;
+    if (item.startsWith('http://') || item.startsWith('https://')) return item;
+    if (item.startsWith('/images/categories/') || item === '/images/hero-product.webp') return item;
+    // Local /images/products/... paths do not exist in public/ and cause 404s
+    if (item.startsWith('/images/products/')) return null;
     if (item.startsWith('image-')) {
       const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production';
       const pid = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '981jghg0';
@@ -147,15 +152,17 @@ function toCdnUrl(item: any): string | null {
 export async function fetchProducts(): Promise<Product[] | null> {
   const preview = isPreview();
   const res = await safeFetch<any[]>(preview ? allProductsPreviewQuery : allProductsQuery, preview);
-  if (!res) return null;
-  return res.map((product) => {
+  const rawList = (res && res.length > 0) ? res : (fallbackProducts as any[]);
+  if (!rawList) return null;
+
+  return rawList.map((product) => {
     const rawImages = Array.isArray(product.imagenes) ? product.imagenes : [];
     const imagenesDetalle: ProductImageItem[] = [];
     const imagenesUrls: string[] = [];
 
     for (const item of rawImages) {
       const url = toCdnUrl(item?.url || item);
-      if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) {
+      if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/images/categories/') || url === '/images/hero-product.webp')) {
         imagenesUrls.push(url);
         imagenesDetalle.push({
           url,
@@ -164,22 +171,14 @@ export async function fetchProducts(): Promise<Product[] | null> {
       }
     }
 
-    // Fallback: If product in Sanity has no images yet, inherit images from fallbackProducts if available
+    // Fallback: If no valid images from CMS or JSON, assign high-quality category image
     if (imagenesUrls.length === 0) {
-      const fb = (fallbackProducts as any[]).find(
-        (p: any) => p.slug === product.slug || p.id === product._id || p.id === product.id
-      );
-      if (fb && Array.isArray(fb.imagenes) && fb.imagenes.length > 0) {
-        for (const imgPath of fb.imagenes) {
-          if (typeof imgPath === 'string') {
-            imagenesUrls.push(imgPath);
-            imagenesDetalle.push({
-              url: imgPath,
-              alt: product.nombre,
-            });
-          }
-        }
-      }
+      const fallbackImg = getCategoryFallbackImage(product.categoria);
+      imagenesUrls.push(fallbackImg);
+      imagenesDetalle.push({
+        url: fallbackImg,
+        alt: product.nombre,
+      });
     }
 
     const variaciones = Array.isArray(product.variaciones)

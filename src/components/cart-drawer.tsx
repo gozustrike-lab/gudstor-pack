@@ -17,7 +17,7 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getCategoryFallbackImage } from '@/lib/utils';
 import { COMPANY } from '@/config/company';
 
 /* ──────────────── Animation Variants ──────────────── */
@@ -84,12 +84,23 @@ export default function CartDrawer() {
     items.forEach((item, index) => {
       const packPrice = getItemPrice(item);
       const subtotal = packPrice * item.quantity;
+      const packObj = item.product?.packs?.find((p: any) => p.cantidad === item.packSize);
+      const unit = packObj?.unidad || item.product?.unidadMedida || 'unidades';
+
       message += `${index + 1}. *${item.product?.nombre || 'Producto'}*\n`;
       if (item.packSize) {
-        message += `   📦 Pack: ${item.packSize} unidades\n`;
+        message += `   📦 Pack: ${item.packSize} ${unit}\n`;
       }
-      if (item.medida) message += `   📐 Medida: ${item.medida}\n`;
-      if (item.color) message += `   🎨 Color: ${item.color}\n`;
+      if (item.medida) {
+        if (item.medida.includes(':')) {
+          message += `   ⚙️ Opción: ${item.medida}\n`;
+        } else {
+          message += `   📐 Medida: ${item.medida}\n`;
+        }
+      }
+      if (item.color && !item.medida?.toLowerCase().includes(item.color.toLowerCase())) {
+        message += `   🎨 Color: ${item.color}\n`;
+      }
       message += `   🔢 Cantidad: ${item.quantity} pack${item.quantity > 1 ? 's' : ''}\n`;
       message += `   💰 Subtotal: ${formatPrice(subtotal)}\n\n`;
     });
@@ -172,9 +183,12 @@ export default function CartDrawer() {
                   {items.map((item) => {
                     const packPrice = getItemPrice(item);
                     const subtotal = packPrice * item.quantity;
-                    const cdnImage = item.product?.imagenes?.find(
-                      (img) => typeof img === 'string' && img.startsWith('http')
-                    );
+                    const fallbackImg = getCategoryFallbackImage(item.product?.categoria);
+                    const itemImage = item.product?.imagenes?.find(
+                      (img) => typeof img === 'string' && (img.startsWith('http') || img.startsWith('/images/'))
+                    ) || fallbackImg;
+                    const packObj = item.product?.packs?.find((p: any) => p.cantidad === item.packSize);
+                    const unit = packObj?.unidad || item.product?.unidadMedida || 'uds';
                     const detailHref = item.product?.seoPath && item.product.seoPath !== 'productos'
                       ? `/${item.product.seoPath}/${item.product.slug || item.product.id}`
                       : `/productos/${item.product?.slug || item.product?.id || ''}`;
@@ -194,17 +208,17 @@ export default function CartDrawer() {
                           onClick={closeCart}
                           className="relative w-20 h-20 rounded-xl bg-muted/40 shrink-0 overflow-hidden flex items-center justify-center"
                         >
-                          {cdnImage ? (
-                            <Image
-                              src={cdnImage}
-                              alt={item.product?.nombre || 'Producto'}
-                              fill
-                              className="object-contain p-2"
-                              sizes="80px"
-                            />
-                          ) : (
-                            <Package className="w-8 h-8 text-primary/40" />
-                          )}
+                          <Image
+                            src={itemImage}
+                            alt={item.product?.nombre || 'Producto'}
+                            fill
+                            className="object-contain p-2"
+                            sizes="80px"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              if (target.src !== fallbackImg) target.src = fallbackImg;
+                            }}
+                          />
                         </Link>
 
                         {/* Details */}
@@ -230,7 +244,7 @@ export default function CartDrawer() {
                             <div className="flex flex-wrap items-center gap-1.5 mt-1">
                               {item.packSize && (
                                 <span className="inline-block px-2 py-0.5 text-[10px] font-bold bg-primary/10 text-primary rounded-md">
-                                  Pack {item.packSize} {item.product?.unidadMedida || 'uds'}
+                                  Pack {item.packSize} {unit}
                                 </span>
                               )}
                               {item.medida && (
